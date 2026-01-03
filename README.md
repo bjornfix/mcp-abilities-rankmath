@@ -2,7 +2,7 @@
 
 Rank Math SEO abilities for [MCP Expose Abilities](https://devenia.com/plugins/mcp-expose-abilities/#add-ons). Get and update meta descriptions, titles, focus keywords, and other SEO settings via the Abilities API.
 
-**Stable tag: 1.0.0**
+**Stable tag: 1.0.1**
 
 ## Requirements
 
@@ -80,6 +80,9 @@ Response:
 ```
 
 ## Changelog
+
+### 1.0.1
+- Fixed: Abilities now register correctly with 'site' category
 
 ### 1.0.0
 - Initial release

@@ -3,7 +3,7 @@
  * Plugin Name: MCP Abilities - Rank Math
  * Plugin URI: https://github.com/bjornfix/mcp-abilities-rankmath
  * Description: Rank Math SEO abilities for MCP. Get and update meta descriptions, titles, focus keywords, and other SEO settings.
- * Version: 1.0.0
+ * Version: 1.0.1
  * Author: Devenia
  * Author URI: https://devenia.com
  * License: GPL-2.0+
@@ -74,7 +74,7 @@ function mcp_register_rankmath_abilities(): void {
 		array(
 			'label'               => 'Get Rank Math SEO Meta',
 			'description'         => 'Get Rank Math SEO meta data for a post or page. Returns title, description, focus keyword, robots, and other SEO settings.',
-			'category'            => 'content',
+			'category'            => 'site',
 			'input_schema'        => array(
 				'type'                 => 'object',
 				'required'             => array( 'id' ),
@@ -172,7 +172,7 @@ function mcp_register_rankmath_abilities(): void {
 		array(
 			'label'               => 'Update Rank Math SEO Meta',
 			'description'         => 'Update Rank Math SEO meta data for a post or page. Can update title, description, focus keyword, robots, canonical URL, and content flags.',
-			'category'            => 'content',
+			'category'            => 'site',
 			'input_schema'        => array(
 				'type'                 => 'object',
 				'required'             => array( 'id' ),
@@ -346,7 +346,7 @@ function mcp_register_rankmath_abilities(): void {
 		array(
 			'label'               => 'Bulk Get Rank Math SEO Meta',
 			'description'         => 'Get Rank Math SEO meta for multiple posts/pages. Useful for auditing SEO across content.',
-			'category'            => 'content',
+			'category'            => 'site',
 			'input_schema'        => array(
 				'type'                 => 'object',
 				'properties'           => array(
