@@ -1,21 +1,30 @@
 # MCP Abilities - Rank Math
 
-Rank Math SEO abilities for [MCP Expose Abilities](https://devenia.com/plugins/mcp-expose-abilities/#add-ons). Get and update meta descriptions, titles, focus keywords, and other SEO settings via the Abilities API.
+Rank Math SEO abilities for [MCP Expose Abilities](https://devenia.com/plugins/mcp-expose-abilities/#add-ons). Manage SEO metadata, redirections, and 404 logs via the Abilities API.
 
-**Stable tag: 1.0.3**
+**Stable tag: 1.0.5**
 
 ## Requirements
 
 - [MCP Expose Abilities](https://github.com/bjornfix/mcp-expose-abilities) (core plugin)
 - [Rank Math SEO](https://wordpress.org/plugins/seo-by-rank-math/) plugin
 
-## Abilities (3)
+## Abilities (12)
 
 | Ability | Description |
 |---------|-------------|
+| `rankmath/list-options` | List Rank Math option names stored in wp_options |
+| `rankmath/get-options` | Get Rank Math option values by name |
+| `rankmath/update-options` | Update Rank Math option values by name |
 | `rankmath/get-meta` | Get SEO metadata for a single post or page |
 | `rankmath/update-meta` | Update SEO metadata (title, description, focus keyword, robots, canonical, flags) |
 | `rankmath/bulk-get-meta` | Retrieve SEO metadata for multiple posts with filtering |
+| `rankmath/list-404-logs` | List recent Rank Math 404 log entries |
+| `rankmath/delete-404-logs` | Delete 404 log entries by ID |
+| `rankmath/clear-404-logs` | Clear all Rank Math 404 logs (requires confirm) |
+| `rankmath/list-redirections` | List Rank Math redirections |
+| `rankmath/create-redirection` | Create Rank Math redirections with one or more sources |
+| `rankmath/delete-redirections` | Delete Rank Math redirections by ID |
 
 ## Installation
 
@@ -79,7 +88,31 @@ Response:
 }
 ```
 
+### Create a Redirection
+
+```json
+{
+  "ability": "rankmath/create-redirection",
+  "parameters": {
+    "sources": [
+      {
+        "pattern": "old-page",
+        "comparison": "exact"
+      }
+    ],
+    "destination": "https://example.com/new-page/",
+    "header_code": 301
+  }
+}
+```
+
 ## Changelog
+
+### 1.0.5
+- Safety: Require confirmation for clearing 404 logs
+
+### 1.0.4
+- Added Rank Math redirection and 404 log management abilities
 
 ### 1.0.3
 - Simplify post access validation and reuse helper

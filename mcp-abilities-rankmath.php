@@ -3,7 +3,7 @@
  * Plugin Name: MCP Abilities - Rank Math
  * Plugin URI: https://github.com/bjornfix/mcp-abilities-rankmath
  * Description: Rank Math SEO abilities for MCP. Get and update meta descriptions, titles, focus keywords, and other SEO settings.
- * Version: 1.0.3
+ * Version: 1.0.5
  * Author: Devenia
  * Author URI: https://devenia.com
  * License: GPL-2.0+
@@ -56,6 +56,27 @@ function mcp_rankmath_get_meta_keys(): array {
 		'rank_math_pillar_content',
 		'rank_math_cornerstone_content',
 	);
+}
+
+/**
+ * Allowed Rank Math redirection status values.
+ */
+function mcp_rankmath_allowed_redirection_statuses(): array {
+	return array( 'active', 'inactive' );
+}
+
+/**
+ * Allowed Rank Math redirection comparison types.
+ */
+function mcp_rankmath_allowed_redirection_comparisons(): array {
+	return array( 'exact', 'contains', 'start', 'end', 'regex' );
+}
+
+/**
+ * Allowed Rank Math redirection header codes.
+ */
+function mcp_rankmath_allowed_redirection_headers(): array {
+	return array( 301, 302, 307, 308, 410, 451 );
 }
 
 /**
@@ -775,6 +796,135 @@ function mcp_register_rankmath_abilities(): void {
 	);
 
 	// =========================================================================
+	// RANK MATH - Delete 404 Logs
+	// =========================================================================
+	wp_register_ability(
+		'rankmath/delete-404-logs',
+		array(
+			'label'               => 'Delete Rank Math 404 Logs',
+			'description'         => 'Delete specific Rank Math 404 log entries by ID.',
+			'category'            => 'site',
+			'input_schema'        => array(
+				'type'                 => 'object',
+				'required'             => array( 'ids' ),
+				'properties'           => array(
+					'ids' => array(
+						'type'        => 'array',
+						'items'       => array( 'type' => 'integer' ),
+						'description' => 'Array of 404 log IDs to delete.',
+					),
+				),
+				'additionalProperties' => false,
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'success' => array( 'type' => 'boolean' ),
+					'deleted' => array( 'type' => 'integer' ),
+					'message' => array( 'type' => 'string' ),
+				),
+			),
+			'execute_callback'    => function ( array $input ): array {
+				global $wpdb;
+				$table = $wpdb->prefix . 'rank_math_404_logs';
+
+				if ( ! mcp_rankmath_table_exists( $table ) ) {
+					return array( 'success' => false, 'message' => 'Rank Math 404 log table not found.' );
+				}
+
+				$ids = array_filter( array_map( 'absint', $input['ids'] ?? array() ) );
+				if ( empty( $ids ) ) {
+					return array( 'success' => false, 'message' => 'No valid IDs provided.' );
+				}
+
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				$deleted = $wpdb->query(
+					$wpdb->prepare(
+						'DELETE FROM `' . esc_sql( $table ) . '` WHERE id IN (' . implode( ',', array_fill( 0, count( $ids ), '%d' ) ) . ')',
+						$ids
+					)
+				);
+
+				return array(
+					'success' => true,
+					'deleted' => (int) $deleted,
+					'message' => 'Deleted ' . (int) $deleted . ' log(s).',
+				);
+			},
+			'permission_callback' => function (): bool {
+				return current_user_can( 'manage_options' );
+			},
+			'meta'                => array(
+				'annotations' => array(
+					'readonly'    => false,
+					'destructive' => true,
+					'idempotent'  => false,
+				),
+			),
+		)
+	);
+
+	// =========================================================================
+	// RANK MATH - Clear 404 Logs
+	// =========================================================================
+	wp_register_ability(
+		'rankmath/clear-404-logs',
+		array(
+			'label'               => 'Clear Rank Math 404 Logs',
+			'description'         => 'Deletes all Rank Math 404 log entries.',
+			'category'            => 'site',
+			'input_schema'        => array(
+				'type'                 => 'object',
+				'required'             => array( 'confirm' ),
+				'properties'           => array(
+					'confirm' => array(
+						'type'        => 'boolean',
+						'description' => 'Set true to confirm clearing all Rank Math 404 logs.',
+					),
+				),
+				'additionalProperties' => false,
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'success' => array( 'type' => 'boolean' ),
+					'message' => array( 'type' => 'string' ),
+				),
+			),
+			'execute_callback'    => function ( array $input ): array {
+				global $wpdb;
+				$table = $wpdb->prefix . 'rank_math_404_logs';
+
+				if ( ! mcp_rankmath_table_exists( $table ) ) {
+					return array( 'success' => false, 'message' => 'Rank Math 404 log table not found.' );
+				}
+
+				if ( empty( $input['confirm'] ) ) {
+					return array( 'success' => false, 'message' => 'Confirmation required to clear 404 logs.' );
+				}
+
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				$wpdb->query( 'TRUNCATE TABLE `' . esc_sql( $table ) . '`' );
+
+				return array(
+					'success' => true,
+					'message' => 'Cleared Rank Math 404 logs.',
+				);
+			},
+			'permission_callback' => function (): bool {
+				return current_user_can( 'manage_options' );
+			},
+			'meta'                => array(
+				'annotations' => array(
+					'readonly'    => false,
+					'destructive' => true,
+					'idempotent'  => false,
+				),
+			),
+		)
+	);
+
+	// =========================================================================
 	// RANK MATH - List Redirections
 	// =========================================================================
 	wp_register_ability(
@@ -835,6 +985,255 @@ function mcp_register_rankmath_abilities(): void {
 					'readonly'    => true,
 					'destructive' => false,
 					'idempotent'  => true,
+				),
+			),
+		)
+	);
+
+	// =========================================================================
+	// RANK MATH - Create Redirection
+	// =========================================================================
+	wp_register_ability(
+		'rankmath/create-redirection',
+		array(
+			'label'               => 'Create Rank Math Redirection',
+			'description'         => 'Create a Rank Math redirection with one or more sources.',
+			'category'            => 'site',
+			'input_schema'        => array(
+				'type'                 => 'object',
+				'required'             => array( 'sources' ),
+				'properties'           => array(
+					'sources' => array(
+						'type'        => 'array',
+						'description' => 'Array of sources with pattern and comparison.',
+						'items'       => array(
+							'type'                 => 'object',
+							'properties'           => array(
+								'pattern'     => array( 'type' => 'string' ),
+								'comparison'  => array(
+									'type'    => 'string',
+									'enum'    => mcp_rankmath_allowed_redirection_comparisons(),
+									'default' => 'exact',
+								),
+								'ignore_case' => array( 'type' => 'boolean' ),
+							),
+							'required'             => array( 'pattern' ),
+							'additionalProperties' => false,
+						),
+					),
+					'destination' => array(
+						'type'        => 'string',
+						'description' => 'Target URL (relative or absolute). Optional for 410/451.',
+					),
+					'header_code' => array(
+						'type'        => 'integer',
+						'default'     => 301,
+						'description' => 'HTTP status code (301, 302, 307, 308, 410, 451).',
+					),
+					'status'      => array(
+						'type'        => 'string',
+						'default'     => 'active',
+						'description' => 'Status: active or inactive.',
+					),
+				),
+				'additionalProperties' => false,
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'success' => array( 'type' => 'boolean' ),
+					'id'      => array( 'type' => 'integer' ),
+					'message' => array( 'type' => 'string' ),
+				),
+			),
+			'execute_callback'    => function ( array $input ): array {
+				if ( ! mcp_rankmath_is_active() ) {
+					return array(
+						'success' => false,
+						'message' => 'Rank Math SEO plugin is not active.',
+					);
+				}
+
+				if ( ! class_exists( 'RankMath\\Redirections\\Redirection' ) ) {
+					return array(
+						'success' => false,
+						'message' => 'Rank Math redirections module is not available.',
+					);
+				}
+
+				$header_code = isset( $input['header_code'] ) ? (int) $input['header_code'] : 301;
+				if ( ! in_array( $header_code, mcp_rankmath_allowed_redirection_headers(), true ) ) {
+					return array(
+						'success' => false,
+						'message' => 'Invalid header_code provided.',
+					);
+				}
+
+				$status = isset( $input['status'] ) ? $input['status'] : 'active';
+				if ( ! in_array( $status, mcp_rankmath_allowed_redirection_statuses(), true ) ) {
+					return array(
+						'success' => false,
+						'message' => 'Invalid status provided.',
+					);
+				}
+
+				$destination = isset( $input['destination'] ) ? (string) $input['destination'] : '';
+				if ( empty( $destination ) && ! in_array( $header_code, array( 410, 451 ), true ) ) {
+					return array(
+						'success' => false,
+						'message' => 'Destination is required for this header_code.',
+					);
+				}
+
+				$sources_input = $input['sources'] ?? array();
+				if ( empty( $sources_input ) || ! is_array( $sources_input ) ) {
+					return array(
+						'success' => false,
+						'message' => 'At least one source is required.',
+					);
+				}
+
+				$sources = array();
+				foreach ( $sources_input as $source ) {
+					if ( ! is_array( $source ) ) {
+						continue;
+					}
+					$pattern = isset( $source['pattern'] ) ? trim( (string) $source['pattern'] ) : '';
+					if ( '' === $pattern ) {
+						continue;
+					}
+					$comparison = isset( $source['comparison'] ) ? $source['comparison'] : 'exact';
+					if ( ! in_array( $comparison, mcp_rankmath_allowed_redirection_comparisons(), true ) ) {
+						return array(
+							'success' => false,
+							'message' => 'Invalid comparison type: ' . $comparison,
+						);
+					}
+					$sources[] = array(
+						'pattern'    => $pattern,
+						'comparison' => $comparison,
+						'ignore'     => ! empty( $source['ignore_case'] ) ? 'case' : '',
+					);
+				}
+
+				if ( empty( $sources ) ) {
+					return array(
+						'success' => false,
+						'message' => 'No valid sources provided.',
+					);
+				}
+
+				$redirection = \RankMath\Redirections\Redirection::from(
+					array(
+						'sources'     => $sources,
+						'url_to'      => $destination,
+						'header_code' => $header_code,
+						'status'      => $status,
+					)
+				);
+
+				if ( method_exists( $redirection, 'is_infinite_loop' ) && $redirection->is_infinite_loop() ) {
+					return array(
+						'success' => false,
+						'message' => 'Redirection would create an infinite loop.',
+					);
+				}
+
+				$redirection_id = $redirection->save();
+				if ( empty( $redirection_id ) ) {
+					return array(
+						'success' => false,
+						'message' => 'Failed to create redirection.',
+					);
+				}
+
+				return array(
+					'success' => true,
+					'id'      => (int) $redirection_id,
+					'message' => 'Redirection created.',
+				);
+			},
+			'permission_callback' => function (): bool {
+				return current_user_can( 'manage_options' );
+			},
+			'meta'                => array(
+				'annotations' => array(
+					'readonly'    => false,
+					'destructive' => false,
+					'idempotent'  => false,
+				),
+			),
+		)
+	);
+
+	// =========================================================================
+	// RANK MATH - Delete Redirections
+	// =========================================================================
+	wp_register_ability(
+		'rankmath/delete-redirections',
+		array(
+			'label'               => 'Delete Rank Math Redirections',
+			'description'         => 'Delete Rank Math redirections by ID.',
+			'category'            => 'site',
+			'input_schema'        => array(
+				'type'                 => 'object',
+				'required'             => array( 'ids' ),
+				'properties'           => array(
+					'ids' => array(
+						'type'        => 'array',
+						'items'       => array( 'type' => 'integer' ),
+						'description' => 'Array of redirection IDs to delete.',
+					),
+				),
+				'additionalProperties' => false,
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'success' => array( 'type' => 'boolean' ),
+					'deleted' => array( 'type' => 'integer' ),
+					'message' => array( 'type' => 'string' ),
+				),
+			),
+			'execute_callback'    => function ( array $input ): array {
+				if ( ! mcp_rankmath_is_active() ) {
+					return array(
+						'success' => false,
+						'message' => 'Rank Math SEO plugin is not active.',
+					);
+				}
+
+				if ( ! class_exists( 'RankMath\\Redirections\\DB' ) ) {
+					return array(
+						'success' => false,
+						'message' => 'Rank Math redirections module is not available.',
+					);
+				}
+
+				$ids = array_filter( array_map( 'absint', $input['ids'] ?? array() ) );
+				if ( empty( $ids ) ) {
+					return array(
+						'success' => false,
+						'message' => 'No valid IDs provided.',
+					);
+				}
+
+				$deleted = \RankMath\Redirections\DB::delete( $ids );
+
+				return array(
+					'success' => true,
+					'deleted' => (int) $deleted,
+					'message' => 'Deleted ' . (int) $deleted . ' redirection(s).',
+				);
+			},
+			'permission_callback' => function (): bool {
+				return current_user_can( 'manage_options' );
+			},
+			'meta'                => array(
+				'annotations' => array(
+					'readonly'    => false,
+					'destructive' => true,
+					'idempotent'  => false,
 				),
 			),
 		)
