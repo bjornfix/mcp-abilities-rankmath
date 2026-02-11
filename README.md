@@ -129,6 +129,13 @@ Response:
 - Added `rankmath/update-meta` ability
 - Added `rankmath/bulk-get-meta` ability
 
+## Devenia MCP Guides
+
+- [WordPress MCP Compatibility Matrix (2026)](https://devenia.com/learn/wordpress-mcp-compatibility-matrix/)
+- [MCP + Elementor: Setup and Pitfalls](https://devenia.com/learn/mcp-elementor-setup-pitfalls/)
+- [MCP Security Checklist for Production WordPress](https://devenia.com/learn/mcp-security-checklist-wordpress/)
+- [Top MCP Errors and Fixes (WordPress)](https://devenia.com/learn/mcp-top-errors-and-fixes/)
+
 ## License
 
 GPL-2.0+
