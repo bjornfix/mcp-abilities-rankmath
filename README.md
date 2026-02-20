@@ -1,13 +1,38 @@
 # MCP Abilities - Rank Math
 
-Rank Math SEO abilities for [MCP Expose Abilities](https://devenia.com/plugins/mcp-expose-abilities/#add-ons). Manage SEO metadata, redirections, and 404 logs via the Abilities API.
+Rank Math SEO abilities for WordPress via MCP.
 
-**Stable tag: 1.0.6**
+[![GitHub release](https://img.shields.io/github/v/release/bjornfix/mcp-abilities-rankmath)](https://github.com/bjornfix/mcp-abilities-rankmath/releases)
+[![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/gpl-2.0)
+
+**Tested up to:** 6.9
+**Stable tag:** 1.0.6
+**Requires PHP:** 8.0
+**License:** GPLv2 or later
+**License URI:** https://www.gnu.org/licenses/gpl-2.0.html
+
+## What It Does
+
+This add-on plugin exposes Rank Math SEO functionality through MCP (Model Context Protocol). Your AI assistant can manage metadata, redirections, and 404 logs.
+
+**Part of the [MCP Expose Abilities](https://devenia.com/plugins/mcp-expose-abilities/) ecosystem.**
 
 ## Requirements
 
-- [MCP Expose Abilities](https://github.com/bjornfix/mcp-expose-abilities) (core plugin)
+- WordPress 6.9+
+- PHP 8.0+
+- [Abilities API](https://github.com/WordPress/abilities-api) plugin
+- [MCP Adapter](https://github.com/WordPress/mcp-adapter) plugin
+- [MCP Expose Abilities](https://github.com/bjornfix/mcp-expose-abilities) core plugin
 - [Rank Math SEO](https://wordpress.org/plugins/seo-by-rank-math/) plugin
+
+## Installation
+
+1. Install and activate MCP Expose Abilities
+2. Install and activate Rank Math SEO
+3. Download the latest release from [Releases](https://github.com/bjornfix/mcp-abilities-rankmath/releases)
+4. Upload via WordPress Admin > Plugins > Add New > Upload Plugin
+5. Activate the plugin
 
 ## Abilities (12)
 
@@ -26,49 +51,24 @@ Rank Math SEO abilities for [MCP Expose Abilities](https://devenia.com/plugins/m
 | `rankmath/create-redirection` | Create Rank Math redirections with one or more sources |
 | `rankmath/delete-redirections` | Delete Rank Math redirections by ID |
 
-## Installation
-
-1. Install and activate [MCP Expose Abilities](https://github.com/bjornfix/mcp-expose-abilities)
-2. Install and activate [Rank Math SEO](https://wordpress.org/plugins/seo-by-rank-math/)
-3. Download the latest release zip
-4. Upload to WordPress via Plugins → Add New → Upload Plugin
-5. Activate the plugin
-
 ## Usage Examples
 
-### Get SEO Meta for a Page
+### Get SEO meta for a page
 
 ```json
 {
-  "ability": "rankmath/get-meta",
+  "ability_name": "rankmath/get-meta",
   "parameters": {
     "id": 123
   }
 }
 ```
 
-Response:
-```json
-{
-  "success": true,
-  "id": 123,
-  "title": "My Page Title",
-  "url": "https://example.com/my-page/",
-  "seo_title": "My Page | Example Site",
-  "seo_description": "A compelling meta description for this page.",
-  "focus_keyword": "my page, example",
-  "robots": ["index", "follow"],
-  "canonical_url": "",
-  "is_pillar": false,
-  "is_cornerstone": true
-}
-```
-
-### Update Meta Description
+### Update meta description
 
 ```json
 {
-  "ability": "rankmath/update-meta",
+  "ability_name": "rankmath/update-meta",
   "parameters": {
     "id": 123,
     "seo_description": "Updated meta description with focus keyword included."
@@ -76,23 +76,11 @@ Response:
 }
 ```
 
-### Find Posts Missing Meta Descriptions
+### Create a redirection
 
 ```json
 {
-  "ability": "rankmath/bulk-get-meta",
-  "parameters": {
-    "missing_desc": true,
-    "per_page": 50
-  }
-}
-```
-
-### Create a Redirection
-
-```json
-{
-  "ability": "rankmath/create-redirection",
+  "ability_name": "rankmath/create-redirection",
   "parameters": {
     "sources": [
       {
@@ -109,7 +97,7 @@ Response:
 ## Changelog
 
 ### 1.0.6
-- Fixed: removed hard plugin header dependency on `abilities-api` to avoid slug-mismatch activation blocking
+- Fixed: Removed hard plugin header dependency on abilities-api to avoid slug-mismatch activation blocking
 - Improved: README and ability docs synced with current release
 
 ### 1.0.5
@@ -136,3 +124,13 @@ Response:
 ## License
 
 GPL-2.0+
+
+## Author
+
+[Devenia](https://devenia.com) - We've been doing SEO and web development since 1993.
+
+## Links
+
+- [Plugin Page](https://devenia.com/plugins/mcp-expose-abilities/)
+- [Core Plugin (MCP Expose Abilities)](https://github.com/bjornfix/mcp-expose-abilities)
+- [All Add-on Plugins](https://devenia.com/plugins/mcp-expose-abilities/#add-ons)
