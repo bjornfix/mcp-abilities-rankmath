@@ -182,7 +182,7 @@ function mcp_register_rankmath_abilities(): void {
 					'count'   => array( 'type' => 'integer' ),
 				),
 			),
-			'execute_callback'    => function ( array $input = array() ): array {
+				'execute_callback'    => function ( array $input = array() ): array {
 				global $wpdb;
 				$limit  = min( 500, max( 1, (int) ( $input['limit'] ?? 200 ) ) );
 				$offset = max( 0, (int) ( $input['offset'] ?? 0 ) );
@@ -266,13 +266,20 @@ function mcp_register_rankmath_abilities(): void {
 					$values[ $name ] = get_option( $name, null );
 				}
 
-				return array( 'success' => true, 'options' => $values );
-			},
-			'permission_callback' => function (): bool {
-				return current_user_can( 'manage_options' );
-			},
-		)
-	);
+					return array( 'success' => true, 'options' => $values );
+				},
+				'permission_callback' => function (): bool {
+					return current_user_can( 'manage_options' );
+				},
+				'meta'                => array(
+					'annotations' => array(
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+				),
+			)
+		);
 
 	// =========================================================================
 	// RANK MATH - Update Options
@@ -302,7 +309,7 @@ function mcp_register_rankmath_abilities(): void {
 					'message' => array( 'type' => 'string' ),
 				),
 			),
-			'execute_callback'    => function ( array $input = array() ): array {
+				'execute_callback'    => function ( array $input = array() ): array {
 				$options = isset( $input['options'] ) && is_array( $input['options'] ) ? $input['options'] : array();
 				if ( empty( $options ) ) {
 					return array( 'success' => false, 'message' => 'No options provided.' );
@@ -318,17 +325,24 @@ function mcp_register_rankmath_abilities(): void {
 					$updated[] = $name;
 				}
 
-				return array(
-					'success' => true,
-					'updated' => $updated,
-					'message' => 'Options updated.',
-				);
-			},
-			'permission_callback' => function (): bool {
-				return current_user_can( 'manage_options' );
-			},
-		)
-	);
+					return array(
+						'success' => true,
+						'updated' => $updated,
+						'message' => 'Options updated.',
+					);
+				},
+				'permission_callback' => function (): bool {
+					return current_user_can( 'manage_options' );
+				},
+				'meta'                => array(
+					'annotations' => array(
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+				),
+			)
+		);
 
 	// =========================================================================
 	// RANK MATH - Get SEO Meta
@@ -753,9 +767,9 @@ function mcp_register_rankmath_abilities(): void {
 					'total'   => array( 'type' => 'integer' ),
 				),
 			),
-			'execute_callback'    => function ( array $input = array() ): array {
-				global $wpdb;
-				$table = $wpdb->prefix . 'rank_math_404_logs';
+				'execute_callback'    => function ( array $input = array() ): array {
+					global $wpdb;
+					$table = $wpdb->prefix . 'rank_math_404_logs';
 
 				if ( ! mcp_rankmath_table_exists( $table ) ) {
 					return array( 'success' => false, 'message' => 'Rank Math 404 log table not found.' );
@@ -766,21 +780,23 @@ function mcp_register_rankmath_abilities(): void {
 				$offset   = ( $page - 1 ) * $per_page;
 
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-				$rows = $wpdb->get_results(
-					$wpdb->prepare(
-						'SELECT * FROM `' . esc_sql( $table ) . '` ORDER BY id DESC LIMIT %d OFFSET %d',
-						$per_page,
-						$offset
-					),
-					ARRAY_A
-				);
+					$rows = $wpdb->get_results(
+						$wpdb->prepare(
+							'SELECT * FROM `' . esc_sql( $table ) . '` ORDER BY id DESC LIMIT %d OFFSET %d',
+							$per_page,
+							$offset
+						),
+						ARRAY_A
+					);
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+					$total = (int) $wpdb->get_var( 'SELECT COUNT(*) FROM `' . esc_sql( $table ) . '`' );
 
-				return array(
-					'success' => true,
-					'logs'    => $rows,
-					'total'   => count( $rows ),
-				);
-			},
+					return array(
+						'success' => true,
+						'logs'    => $rows,
+						'total'   => $total,
+					);
+				},
 			'permission_callback' => function (): bool {
 				return current_user_can( 'manage_options' );
 			},
@@ -902,8 +918,8 @@ function mcp_register_rankmath_abilities(): void {
 					return array( 'success' => false, 'message' => 'Confirmation required to clear 404 logs.' );
 				}
 
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-				$wpdb->query( 'TRUNCATE TABLE `' . esc_sql( $table ) . '`' );
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+					$wpdb->query( 'DELETE FROM `' . esc_sql( $table ) . '`' );
 
 				return array(
 					'success' => true,
@@ -948,9 +964,9 @@ function mcp_register_rankmath_abilities(): void {
 					'total'       => array( 'type' => 'integer' ),
 				),
 			),
-			'execute_callback'    => function ( array $input = array() ): array {
-				global $wpdb;
-				$table = $wpdb->prefix . 'rank_math_redirections';
+				'execute_callback'    => function ( array $input = array() ): array {
+					global $wpdb;
+					$table = $wpdb->prefix . 'rank_math_redirections';
 
 				if ( ! mcp_rankmath_table_exists( $table ) ) {
 					return array( 'success' => false, 'message' => 'Rank Math redirections table not found.' );
@@ -961,21 +977,23 @@ function mcp_register_rankmath_abilities(): void {
 				$offset   = ( $page - 1 ) * $per_page;
 
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-				$rows = $wpdb->get_results(
-					$wpdb->prepare(
-						'SELECT * FROM `' . esc_sql( $table ) . '` ORDER BY id DESC LIMIT %d OFFSET %d',
-						$per_page,
-						$offset
-					),
-					ARRAY_A
-				);
+					$rows = $wpdb->get_results(
+						$wpdb->prepare(
+							'SELECT * FROM `' . esc_sql( $table ) . '` ORDER BY id DESC LIMIT %d OFFSET %d',
+							$per_page,
+							$offset
+						),
+						ARRAY_A
+					);
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+					$total = (int) $wpdb->get_var( 'SELECT COUNT(*) FROM `' . esc_sql( $table ) . '`' );
 
-				return array(
-					'success'      => true,
-					'redirections' => $rows,
-					'total'        => count( $rows ),
-				);
-			},
+					return array(
+						'success'      => true,
+						'redirections' => $rows,
+						'total'        => $total,
+					);
+				},
 			'permission_callback' => function (): bool {
 				return current_user_can( 'manage_options' );
 			},

@@ -2,7 +2,7 @@
 
 Rank Math SEO abilities for [MCP Expose Abilities](https://devenia.com/plugins/mcp-expose-abilities/#add-ons). Manage SEO metadata, redirections, and 404 logs via the Abilities API.
 
-**Stable tag: 1.0.5**
+**Stable tag: 1.0.6**
 
 ## Requirements
 
@@ -107,6 +107,10 @@ Response:
 ```
 
 ## Changelog
+
+### 1.0.6
+- Fixed: removed hard plugin header dependency on `abilities-api` to avoid slug-mismatch activation blocking
+- Improved: README and ability docs synced with current release
 
 ### 1.0.5
 - Safety: Require confirmation for clearing 404 logs
