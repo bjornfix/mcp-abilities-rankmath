@@ -3,7 +3,7 @@
  * Plugin Name: MCP Abilities - Rank Math
  * Plugin URI: https://github.com/bjornfix/mcp-abilities-rankmath
  * Description: Rank Math SEO abilities for MCP. Get and update meta descriptions, titles, focus keywords, and other SEO settings.
- * Version: 1.1.1
+ * Version: 1.1.2
  * Author: Devenia
  * Author URI: https://devenia.com
  * License: GPL-2.0+
@@ -280,15 +280,12 @@ function mcp_rankmath_add_organization_contact_fields( array $entity, array $tit
 }
 
 /**
- * Recursively walk Rank Math JSON-LD data and restore organization contact fields.
+ * Recursively walk final Rank Math schema data and restore organization contact fields.
  *
- * @param array<string,mixed> $data   JSON-LD data.
- * @param mixed              $json_ld Rank Math JsonLD instance.
+ * @param array<string,mixed> $data Validated JSON-LD data.
  * @return array<string,mixed>
  */
-function mcp_rankmath_filter_json_ld_organization_contact_fields( array $data, $json_ld ): array {
-	unset( $json_ld );
-
+function mcp_rankmath_filter_validated_schema_organization_contact_fields( array $data ): array {
 	$titles = mcp_rankmath_get_titles_settings();
 	$email  = isset( $titles['email'] ) ? sanitize_email( (string) $titles['email'] ) : '';
 	$phone  = mcp_rankmath_get_preferred_phone( $titles );
@@ -316,7 +313,7 @@ function mcp_rankmath_filter_json_ld_organization_contact_fields( array $data, $
 	return $walker( $data );
 }
 
-add_filter( 'rank_math/json_ld', 'mcp_rankmath_filter_json_ld_organization_contact_fields', 20, 2 );
+add_filter( 'rank_math/schema/validated_data', 'mcp_rankmath_filter_validated_schema_organization_contact_fields', 20 );
 
 /**
  * Build effective social profile URLs from Rank Math title settings.
