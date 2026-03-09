@@ -3,7 +3,7 @@
  * Plugin Name: MCP Abilities - Rank Math
  * Plugin URI: https://github.com/bjornfix/mcp-abilities-rankmath
  * Description: Rank Math SEO abilities for MCP. Get and update meta descriptions, titles, focus keywords, and other SEO settings.
- * Version: 1.1.0
+ * Version: 1.1.1
  * Author: Devenia
  * Author URI: https://devenia.com
  * License: GPL-2.0+
@@ -202,6 +202,121 @@ function mcp_rankmath_get_general_settings(): array {
 function mcp_rankmath_get_sitemap_settings(): array {
 	return mcp_rankmath_get_option_array( 'rank-math-options-sitemap' );
 }
+
+/**
+ * Get the preferred organization telephone from Rank Math title settings.
+ *
+ * @param array<string,mixed> $titles Titles settings.
+ * @return string
+ */
+function mcp_rankmath_get_preferred_phone( array $titles ): string {
+	$phone = isset( $titles['phone'] ) ? sanitize_text_field( (string) $titles['phone'] ) : '';
+	if ( '' !== $phone ) {
+		return $phone;
+	}
+
+	if ( isset( $titles['phone_numbers'] ) && is_array( $titles['phone_numbers'] ) ) {
+		foreach ( $titles['phone_numbers'] as $phone_number ) {
+			if ( ! is_array( $phone_number ) || empty( $phone_number['number'] ) ) {
+				continue;
+			}
+
+			$phone = sanitize_text_field( (string) $phone_number['number'] );
+			if ( '' !== $phone ) {
+				return $phone;
+			}
+		}
+	}
+
+	return '';
+}
+
+/**
+ * Check whether a schema node represents the site organization.
+ *
+ * @param array<string,mixed> $entity Schema node.
+ * @return bool
+ */
+function mcp_rankmath_is_organization_entity( array $entity ): bool {
+	$types = $entity['@type'] ?? array();
+	if ( is_string( $types ) ) {
+		$types = array( $types );
+	}
+
+	if ( is_array( $types ) && in_array( 'Organization', $types, true ) ) {
+		return true;
+	}
+
+	$id = isset( $entity['@id'] ) ? (string) $entity['@id'] : '';
+	return '' !== $id && home_url( '/#organization' ) === $id;
+}
+
+/**
+ * Inject explicit contact details into organization schema nodes.
+ *
+ * Rank Math stores these fields in the titles settings, but its final
+ * organization sanitization can strip them from the public JSON-LD graph.
+ *
+ * @param array<string,mixed> $entity Schema node.
+ * @param array<string,mixed> $titles Titles settings.
+ * @return array<string,mixed>
+ */
+function mcp_rankmath_add_organization_contact_fields( array $entity, array $titles ): array {
+	if ( ! mcp_rankmath_is_organization_entity( $entity ) ) {
+		return $entity;
+	}
+
+	$email = isset( $titles['email'] ) ? sanitize_email( (string) $titles['email'] ) : '';
+	if ( '' !== $email ) {
+		$entity['email'] = $email;
+	}
+
+	$phone = mcp_rankmath_get_preferred_phone( $titles );
+	if ( '' !== $phone ) {
+		$entity['telephone'] = $phone;
+	}
+
+	return $entity;
+}
+
+/**
+ * Recursively walk Rank Math JSON-LD data and restore organization contact fields.
+ *
+ * @param array<string,mixed> $data   JSON-LD data.
+ * @param mixed              $json_ld Rank Math JsonLD instance.
+ * @return array<string,mixed>
+ */
+function mcp_rankmath_filter_json_ld_organization_contact_fields( array $data, $json_ld ): array {
+	unset( $json_ld );
+
+	$titles = mcp_rankmath_get_titles_settings();
+	$email  = isset( $titles['email'] ) ? sanitize_email( (string) $titles['email'] ) : '';
+	$phone  = mcp_rankmath_get_preferred_phone( $titles );
+
+	if ( '' === $email && '' === $phone ) {
+		return $data;
+	}
+
+	$walker = static function ( $value ) use ( &$walker, $titles ) {
+		if ( ! is_array( $value ) ) {
+			return $value;
+		}
+
+		$value = mcp_rankmath_add_organization_contact_fields( $value, $titles );
+
+		foreach ( $value as $key => $child ) {
+			if ( is_array( $child ) ) {
+				$value[ $key ] = $walker( $child );
+			}
+		}
+
+		return $value;
+	};
+
+	return $walker( $data );
+}
+
+add_filter( 'rank_math/json_ld', 'mcp_rankmath_filter_json_ld_organization_contact_fields', 20, 2 );
 
 /**
  * Build effective social profile URLs from Rank Math title settings.

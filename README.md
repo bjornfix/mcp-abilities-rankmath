@@ -6,7 +6,7 @@ Rank Math SEO abilities for WordPress via MCP.
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/gpl-2.0)
 
 **Tested up to:** 6.9
-**Stable tag:** 1.1.0
+**Stable tag:** 1.1.1
 **Requires PHP:** 8.0
 **License:** GPLv2 or later
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html
@@ -107,6 +107,9 @@ This add-on plugin exposes Rank Math SEO functionality through MCP (Model Contex
 
 ## Changelog
 
+### 1.1.1
+- Added: explicit `email` and `telephone` restoration for public `Organization` schema nodes when those fields are configured in the publisher profile
+- Fixed: Rank Math contact details stored in MCP publisher settings now survive the final schema sanitization step
 ### 1.1.0
 - Added: schema status, module management, rewrite inspection, llms status/preview, publisher profile, social profiles, and sitemap status abilities
 - Improved: publisher/schema and llms debugging can now be done without raw option spelunking
