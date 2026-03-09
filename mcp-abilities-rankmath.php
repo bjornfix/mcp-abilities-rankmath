@@ -3,7 +3,7 @@
  * Plugin Name: MCP Abilities - Rank Math
  * Plugin URI: https://github.com/bjornfix/mcp-abilities-rankmath
  * Description: Rank Math SEO abilities for MCP. Get and update meta descriptions, titles, focus keywords, and other SEO settings.
- * Version: 1.0.9
+ * Version: 1.0.10
  * Author: Devenia
  * Author URI: https://devenia.com
  * License: GPL-2.0+
@@ -114,6 +114,43 @@ function mcp_rankmath_is_allowed_option_name( string $name ): bool {
 	}
 	return false;
 }
+
+/**
+ * Check whether the current request targets the dynamic llms.txt endpoint.
+ *
+ * @return bool
+ */
+function mcp_rankmath_is_llms_request(): bool {
+	$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? (string) wp_unslash( $_SERVER['REQUEST_URI'] ) : '';
+	if ( '' === $request_uri ) {
+		return false;
+	}
+
+	$path = wp_parse_url( $request_uri, PHP_URL_PATH );
+	return is_string( $path ) && '/llms.txt' === untrailingslashit( $path );
+}
+
+/**
+ * Override Rank Math title settings for the llms.txt request only.
+ *
+ * Keeps sitewide entity/schema settings intact while allowing a site-branded
+ * llms.txt heading.
+ *
+ * @param mixed $value Option value from get_option().
+ * @return mixed
+ */
+function mcp_rankmath_filter_llms_title_settings( $value ) {
+	if ( ! mcp_rankmath_is_llms_request() || ! is_array( $value ) ) {
+		return $value;
+	}
+
+	$value['knowledgegraph_name']   = 'Log In';
+	$value['organization_description'] = 'Everywhere!';
+
+	return $value;
+}
+
+add_filter( 'option_rank-math-options-titles', 'mcp_rankmath_filter_llms_title_settings' );
 
 /**
  * Get the current rewrite rules and llms.txt rule status.

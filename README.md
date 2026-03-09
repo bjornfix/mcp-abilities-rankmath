@@ -6,7 +6,7 @@ Rank Math SEO abilities for WordPress via MCP.
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/gpl-2.0)
 
 **Tested up to:** 6.9
-**Stable tag:** 1.0.9
+**Stable tag:** 1.0.10
 **Requires PHP:** 8.0
 **License:** GPLv2 or later
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html
@@ -96,6 +96,9 @@ This add-on plugin exposes Rank Math SEO functionality through MCP (Model Contex
 ```
 
 ## Changelog
+
+### 1.0.10
+- Added: llms.txt-only title override so Rank Math can output `Log In: Everywhere!` without polluting global entity/schema settings
 
 ### 1.0.9
 - Added: `rankmath/refresh-llms-route` to inspect and refresh the Rank Math `llms.txt` rewrite rule after module changes
