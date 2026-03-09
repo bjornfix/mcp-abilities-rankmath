@@ -6,7 +6,7 @@ Rank Math SEO abilities for WordPress via MCP.
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/gpl-2.0)
 
 **Tested up to:** 6.9
-**Stable tag:** 1.0.7
+**Stable tag:** 1.0.8
 **Requires PHP:** 8.0
 **License:** GPLv2 or later
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html
@@ -95,6 +95,9 @@ This add-on plugin exposes Rank Math SEO functionality through MCP (Model Contex
 ```
 
 ## Changelog
+
+### 1.0.8
+- Fixed: `rankmath/list-options` now uses a Plugin Check-compliant prepared SQL query while still exposing both `rank_math_*` and `rank-math-*` option names
 
 ### 1.0.7
 - Fixed: Rank Math global settings stored as `rank-math-*` options are now visible and writable through the MCP option abilities
