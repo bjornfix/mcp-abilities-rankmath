@@ -3,7 +3,7 @@
  * Plugin Name: MCP Abilities - Rank Math
  * Plugin URI: https://github.com/bjornfix/mcp-abilities-rankmath
  * Description: Rank Math SEO abilities for MCP. Get and update meta descriptions, titles, focus keywords, and other SEO settings.
- * Version: 1.0.6
+ * Version: 1.0.7
  * Author: Devenia
  * Author URI: https://devenia.com
  * License: GPL-2.0+
@@ -82,7 +82,22 @@ function mcp_rankmath_allowed_redirection_headers(): array {
  * Allowed Rank Math option name prefixes.
  */
 function mcp_rankmath_allowed_option_prefixes(): array {
-	return array( 'rank_math_' );
+	return array(
+		'rank_math_',
+		'rank-math-',
+	);
+}
+
+/**
+ * Allowed SQL LIKE patterns for Rank Math option names.
+ *
+ * @return array
+ */
+function mcp_rankmath_allowed_option_like_patterns(): array {
+	return array(
+		'rank_math_%',
+		'rank-math-%',
+	);
 }
 
 /**
@@ -187,14 +202,18 @@ function mcp_register_rankmath_abilities(): void {
 				$limit  = min( 500, max( 1, (int) ( $input['limit'] ?? 200 ) ) );
 				$offset = max( 0, (int) ( $input['offset'] ?? 0 ) );
 
-				$like = 'rank_math_%';
+				$like_patterns = mcp_rankmath_allowed_option_like_patterns();
+				$where_sql     = implode(
+					' OR ',
+					array_fill( 0, count( $like_patterns ), 'option_name LIKE %s' )
+				);
+				$query_args    = array_merge( $like_patterns, array( $limit, $offset ) );
+
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				$rows = $wpdb->get_results(
 					$wpdb->prepare(
-						'SELECT option_name FROM ' . $wpdb->options . ' WHERE option_name LIKE %s ORDER BY option_name ASC LIMIT %d OFFSET %d',
-						$like,
-						$limit,
-						$offset
+						'SELECT option_name FROM ' . $wpdb->options . ' WHERE ' . $where_sql . ' ORDER BY option_name ASC LIMIT %d OFFSET %d',
+						...$query_args
 					),
 					ARRAY_A
 				);
