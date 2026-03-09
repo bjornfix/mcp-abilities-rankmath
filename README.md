@@ -6,7 +6,7 @@ Rank Math SEO abilities for WordPress via MCP.
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/gpl-2.0)
 
 **Tested up to:** 6.9
-**Stable tag:** 1.0.8
+**Stable tag:** 1.0.9
 **Requires PHP:** 8.0
 **License:** GPLv2 or later
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html
@@ -34,13 +34,14 @@ This add-on plugin exposes Rank Math SEO functionality through MCP (Model Contex
 4. Upload via WordPress Admin > Plugins > Add New > Upload Plugin
 5. Activate the plugin
 
-## Abilities (12)
+## Abilities (13)
 
 | Ability | Description |
 |---------|-------------|
 | `rankmath/list-options` | List Rank Math option names stored in wp_options |
 | `rankmath/get-options` | Get Rank Math option values by name |
 | `rankmath/update-options` | Update Rank Math option values by name |
+| `rankmath/refresh-llms-route` | Verify the Rank Math `llms.txt` rewrite rule and flush rewrites when needed |
 | `rankmath/get-meta` | Get SEO metadata for a single post or page |
 | `rankmath/update-meta` | Update SEO metadata (title, description, focus keyword, robots, canonical, flags) |
 | `rankmath/bulk-get-meta` | Retrieve SEO metadata for multiple posts with filtering |
@@ -95,6 +96,9 @@ This add-on plugin exposes Rank Math SEO functionality through MCP (Model Contex
 ```
 
 ## Changelog
+
+### 1.0.9
+- Added: `rankmath/refresh-llms-route` to inspect and refresh the Rank Math `llms.txt` rewrite rule after module changes
 
 ### 1.0.8
 - Fixed: `rankmath/list-options` now uses a Plugin Check-compliant prepared SQL query while still exposing both `rank_math_*` and `rank-math-*` option names

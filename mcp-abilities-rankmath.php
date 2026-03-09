@@ -3,7 +3,7 @@
  * Plugin Name: MCP Abilities - Rank Math
  * Plugin URI: https://github.com/bjornfix/mcp-abilities-rankmath
  * Description: Rank Math SEO abilities for MCP. Get and update meta descriptions, titles, focus keywords, and other SEO settings.
- * Version: 1.0.8
+ * Version: 1.0.9
  * Author: Devenia
  * Author URI: https://devenia.com
  * License: GPL-2.0+
@@ -113,6 +113,37 @@ function mcp_rankmath_is_allowed_option_name( string $name ): bool {
 		}
 	}
 	return false;
+}
+
+/**
+ * Get the current rewrite rules and llms.txt rule status.
+ *
+ * @return array<string,mixed>
+ */
+function mcp_rankmath_get_llms_rewrite_status(): array {
+	global $wp_rewrite;
+
+	if ( ! isset( $wp_rewrite ) || ! is_object( $wp_rewrite ) ) {
+		return array(
+			'rule_present' => false,
+			'rule_target'  => '',
+			'message'      => 'WordPress rewrite subsystem is not available.',
+		);
+	}
+
+	$rules       = $wp_rewrite->wp_rewrite_rules();
+	$rule_key    = '^llms\.txt$';
+	$rule_target = '';
+
+	if ( is_array( $rules ) && isset( $rules[ $rule_key ] ) ) {
+		$rule_target = (string) $rules[ $rule_key ];
+	}
+
+	return array(
+		'rule_present' => '' !== $rule_target,
+		'rule_target'  => $rule_target,
+		'message'      => '' !== $rule_target ? 'llms.txt rewrite rule is registered.' : 'llms.txt rewrite rule is missing from stored rewrite rules.',
+	);
 }
 
 /**
@@ -360,8 +391,103 @@ function mcp_register_rankmath_abilities(): void {
 						'idempotent'  => true,
 					),
 				),
-			)
-		);
+		)
+	);
+
+	// =========================================================================
+	// RANK MATH - Refresh LLMS Route
+	// =========================================================================
+	wp_register_ability(
+		'rankmath/refresh-llms-route',
+		array(
+			'label'               => 'Refresh Rank Math llms.txt Route',
+			'description'         => 'Checks whether the Rank Math llms.txt rewrite rule is present and flushes rewrite rules when needed.',
+			'category'            => 'site',
+			'input_schema'        => array(
+				'type'                 => 'object',
+				'properties'           => array(
+					'force_flush' => array(
+						'type'        => 'boolean',
+						'default'     => false,
+						'description' => 'Flush rewrite rules even if the llms.txt rule already appears to exist.',
+					),
+				),
+				'additionalProperties' => false,
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'success'            => array( 'type' => 'boolean' ),
+					'module_active'      => array( 'type' => 'boolean' ),
+					'permalink_structure' => array( 'type' => 'string' ),
+					'before'             => array( 'type' => 'object' ),
+					'after'              => array( 'type' => 'object' ),
+					'flushed'            => array( 'type' => 'boolean' ),
+					'message'            => array( 'type' => 'string' ),
+				),
+			),
+			'execute_callback'    => function ( array $input = array() ): array {
+				if ( ! mcp_rankmath_is_active() ) {
+					return array(
+						'success' => false,
+						'message' => 'Rank Math SEO plugin is not active.',
+					);
+				}
+
+				if ( ! function_exists( 'flush_rewrite_rules' ) ) {
+					return array(
+						'success' => false,
+						'message' => 'WordPress rewrite functions are unavailable.',
+					);
+				}
+
+				$force_flush         = ! empty( $input['force_flush'] );
+				$module_active       = class_exists( '\\RankMath\\Helper' ) && \RankMath\Helper::is_module_active( 'llms-txt' );
+				$permalink_structure = (string) get_option( 'permalink_structure', '' );
+				$before              = mcp_rankmath_get_llms_rewrite_status();
+				$flushed             = false;
+
+				if ( ! $module_active ) {
+					return array(
+						'success'             => false,
+						'module_active'       => false,
+						'permalink_structure' => $permalink_structure,
+						'before'              => $before,
+						'after'               => $before,
+						'flushed'             => false,
+						'message'             => 'Rank Math llms-txt module is not active.',
+					);
+				}
+
+				if ( $force_flush || empty( $before['rule_present'] ) ) {
+					flush_rewrite_rules( false );
+					$flushed = true;
+				}
+
+				$after = mcp_rankmath_get_llms_rewrite_status();
+
+				return array(
+					'success'             => ! empty( $after['rule_present'] ),
+					'module_active'       => true,
+					'permalink_structure' => $permalink_structure,
+					'before'              => $before,
+					'after'               => $after,
+					'flushed'             => $flushed,
+					'message'             => ! empty( $after['rule_present'] ) ? 'llms.txt rewrite rule is available.' : 'llms.txt rewrite rule is still missing after refresh.',
+				);
+			},
+			'permission_callback' => function (): bool {
+				return current_user_can( 'manage_options' );
+			},
+			'meta'                => array(
+				'annotations' => array(
+					'readonly'    => false,
+					'destructive' => false,
+					'idempotent'  => false,
+				),
+			),
+		)
+	);
 
 	// =========================================================================
 	// RANK MATH - Get SEO Meta
