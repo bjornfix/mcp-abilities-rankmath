@@ -4,7 +4,7 @@ Tags: seo, rank math, mcp, api, automation
 Requires at least: 6.9
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 1.0.10
+Stable tag: 1.0.11
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -66,7 +66,7 @@ This add-on plugin extends [MCP Expose Abilities](https://devenia.com/plugins/mc
 
 == Changelog ==
 
-= 1.0.10 =
+= 1.0.11 =
 * Added: llms.txt-only title override so Rank Math can output `Log In: Everywhere!` without changing global entity/schema settings
 
 = 1.0.9 =
