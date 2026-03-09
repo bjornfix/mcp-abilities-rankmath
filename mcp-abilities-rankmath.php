@@ -3,7 +3,7 @@
  * Plugin Name: MCP Abilities - Rank Math
  * Plugin URI: https://github.com/bjornfix/mcp-abilities-rankmath
  * Description: Rank Math SEO abilities for MCP. Get and update meta descriptions, titles, focus keywords, and other SEO settings.
- * Version: 1.0.11
+ * Version: 1.1.0
  * Author: Devenia
  * Author URI: https://devenia.com
  * License: GPL-2.0+
@@ -116,6 +116,18 @@ function mcp_rankmath_is_allowed_option_name( string $name ): bool {
 }
 
 /**
+ * Get llms.txt brand overrides used for request-scoped heading output.
+ *
+ * @return array<string,string>
+ */
+function mcp_rankmath_get_llms_branding(): array {
+	return array(
+		'name'        => 'Log In',
+		'description' => 'Everywhere!',
+	);
+}
+
+/**
  * Check whether the current request targets the dynamic llms.txt endpoint.
  *
  * @return bool
@@ -144,13 +156,356 @@ function mcp_rankmath_filter_llms_title_settings( $value ) {
 		return $value;
 	}
 
-	$value['knowledgegraph_name']   = 'Log In';
-	$value['organization_description'] = 'Everywhere!';
+	$branding                        = mcp_rankmath_get_llms_branding();
+	$value['knowledgegraph_name']    = $branding['name'];
+	$value['organization_description'] = $branding['description'];
 
 	return $value;
 }
 
 add_filter( 'option_rank-math-options-titles', 'mcp_rankmath_filter_llms_title_settings' );
+
+/**
+ * Get a Rank Math option as an array.
+ *
+ * @param string $name Option name.
+ * @return array<string,mixed>
+ */
+function mcp_rankmath_get_option_array( string $name ): array {
+	$value = get_option( $name, array() );
+	return is_array( $value ) ? $value : array();
+}
+
+/**
+ * Return the Rank Math titles settings array.
+ *
+ * @return array<string,mixed>
+ */
+function mcp_rankmath_get_titles_settings(): array {
+	return mcp_rankmath_get_option_array( 'rank-math-options-titles' );
+}
+
+/**
+ * Return the Rank Math general settings array.
+ *
+ * @return array<string,mixed>
+ */
+function mcp_rankmath_get_general_settings(): array {
+	return mcp_rankmath_get_option_array( 'rank-math-options-general' );
+}
+
+/**
+ * Return the Rank Math sitemap settings array.
+ *
+ * @return array<string,mixed>
+ */
+function mcp_rankmath_get_sitemap_settings(): array {
+	return mcp_rankmath_get_option_array( 'rank-math-options-sitemap' );
+}
+
+/**
+ * Build effective social profile URLs from Rank Math title settings.
+ *
+ * @param array<string,mixed> $titles Titles settings.
+ * @return array<int,string>
+ */
+function mcp_rankmath_get_social_profiles_from_titles( array $titles ): array {
+	$profiles = array();
+
+	$facebook = isset( $titles['social_url_facebook'] ) ? esc_url_raw( (string) $titles['social_url_facebook'] ) : '';
+	if ( '' !== $facebook ) {
+		$profiles[] = $facebook;
+	}
+
+	$twitter = isset( $titles['twitter_author_names'] ) ? ltrim( sanitize_text_field( (string) $titles['twitter_author_names'] ), '@' ) : '';
+	if ( '' !== $twitter ) {
+		$profiles[] = 'https://twitter.com/' . $twitter;
+	}
+
+	$additional = isset( $titles['social_additional_profiles'] ) ? (string) $titles['social_additional_profiles'] : '';
+	if ( '' !== trim( $additional ) ) {
+		$lines = preg_split( '/\r\n|\r|\n/', $additional ) ?: array();
+		foreach ( $lines as $line ) {
+			$url = esc_url_raw( trim( (string) $line ) );
+			if ( '' !== $url ) {
+				$profiles[] = $url;
+			}
+		}
+	}
+
+	return array_values( array_unique( array_filter( $profiles ) ) );
+}
+
+/**
+ * Normalize additional social profile input into Rank Math storage format.
+ *
+ * @param mixed $profiles Raw input.
+ * @return string
+ */
+function mcp_rankmath_normalize_additional_profiles( $profiles ): string {
+	if ( is_array( $profiles ) ) {
+		$profiles = array_map(
+			static function ( $item ): string {
+				return esc_url_raw( trim( (string) $item ) );
+			},
+			$profiles
+		);
+		$profiles = array_values( array_filter( $profiles ) );
+		return implode( "\n", $profiles );
+	}
+
+	return trim( (string) $profiles );
+}
+
+/**
+ * Get available Rank Math modules with current status.
+ *
+ * @return array<int,array<string,mixed>>
+ */
+function mcp_rankmath_get_module_records(): array {
+	if ( ! function_exists( 'rank_math' ) || ! isset( rank_math()->manager ) || ! is_object( rank_math()->manager ) ) {
+		return array();
+	}
+
+	$records = array();
+	foreach ( rank_math()->manager->modules as $id => $module ) {
+		if ( ! is_object( $module ) || ! method_exists( $module, 'get' ) ) {
+			continue;
+		}
+
+		$records[] = array(
+			'id'           => (string) $id,
+			'title'        => (string) $module->get( 'title' ),
+			'description'  => wp_strip_all_tags( (string) $module->get( 'desc' ) ),
+			'settings_url' => (string) $module->get( 'settings' ),
+			'active'       => method_exists( $module, 'is_active' ) ? (bool) $module->is_active() : false,
+			'disabled'     => method_exists( $module, 'is_disabled' ) ? (bool) $module->is_disabled() : false,
+			'hidden'       => method_exists( $module, 'is_hidden' ) ? (bool) $module->is_hidden() : false,
+			'upgradeable'  => method_exists( $module, 'is_upgradeable' ) ? (bool) $module->is_upgradeable() : false,
+			'pro'          => method_exists( $module, 'is_pro_module' ) ? (bool) $module->is_pro_module() : false,
+		);
+	}
+
+	return $records;
+}
+
+/**
+ * Get rewrite rules as an array.
+ *
+ * @return array<string,string>
+ */
+function mcp_rankmath_get_rewrite_rules_array(): array {
+	global $wp_rewrite;
+
+	if ( ! isset( $wp_rewrite ) || ! is_object( $wp_rewrite ) ) {
+		return array();
+	}
+
+	$rules = $wp_rewrite->wp_rewrite_rules();
+	return is_array( $rules ) ? $rules : array();
+}
+
+/**
+ * Find a rewrite rule for a known endpoint or custom regex.
+ *
+ * @param string $endpoint Endpoint identifier.
+ * @param string $custom_regex Custom regex for endpoint=custom.
+ * @return array<string,mixed>
+ */
+function mcp_rankmath_get_rewrite_status( string $endpoint = 'llms.txt', string $custom_regex = '' ): array {
+	$rules = mcp_rankmath_get_rewrite_rules_array();
+	if ( empty( $rules ) ) {
+		return array(
+			'endpoint'            => $endpoint,
+			'searched_regex'      => $custom_regex,
+			'rule_present'        => false,
+			'matched_regex'       => '',
+			'rule_target'         => '',
+			'permalink_structure' => (string) get_option( 'permalink_structure', '' ),
+			'message'             => 'WordPress rewrite rules are unavailable.',
+		);
+	}
+
+	$search_regex = '';
+	$target_hint  = '';
+	if ( 'llms.txt' === $endpoint ) {
+		$search_regex = '^llms\.txt$';
+		$target_hint  = 'llms_txt=1';
+	} elseif ( 'sitemap_index.xml' === $endpoint ) {
+		$search_regex = '^sitemap_index\.xml$';
+		$target_hint  = 'sitemap=1';
+	} elseif ( 'custom' === $endpoint ) {
+		$search_regex = $custom_regex;
+	}
+
+	$matched_regex = '';
+	$matched_target = '';
+
+	if ( '' !== $search_regex && isset( $rules[ $search_regex ] ) ) {
+		$matched_regex  = $search_regex;
+		$matched_target = (string) $rules[ $search_regex ];
+	}
+
+	if ( '' === $matched_regex && '' !== $target_hint ) {
+		foreach ( $rules as $regex => $target ) {
+			if ( false !== strpos( (string) $target, $target_hint ) ) {
+				$matched_regex  = (string) $regex;
+				$matched_target = (string) $target;
+				break;
+			}
+		}
+	}
+
+	return array(
+		'endpoint'            => $endpoint,
+		'searched_regex'      => $search_regex,
+		'rule_present'        => '' !== $matched_regex,
+		'matched_regex'       => $matched_regex,
+		'rule_target'         => $matched_target,
+		'permalink_structure' => (string) get_option( 'permalink_structure', '' ),
+		'message'             => '' !== $matched_regex ? 'Rewrite rule found.' : 'Rewrite rule not found.',
+	);
+}
+
+/**
+ * Fetch a local URL for preview/status inspection.
+ *
+ * @param string $path URL path.
+ * @param int    $max_lines Max lines to keep in preview.
+ * @return array<string,mixed>
+ */
+function mcp_rankmath_fetch_local_preview( string $path, int $max_lines = 20 ): array {
+	$url      = home_url( $path );
+	$response = wp_remote_get(
+		$url,
+		array(
+			'timeout'     => 15,
+			'redirection' => 3,
+		)
+	);
+
+	if ( is_wp_error( $response ) ) {
+		return array(
+			'url'          => $url,
+			'status_code'  => 0,
+			'content_type' => '',
+			'preview'      => '',
+			'lines'        => array(),
+			'message'      => $response->get_error_message(),
+		);
+	}
+
+	$body         = (string) wp_remote_retrieve_body( $response );
+	$preview_lines = preg_split( '/\r\n|\r|\n/', $body ) ?: array();
+	$preview_lines = array_slice( $preview_lines, 0, max( 1, $max_lines ) );
+
+	return array(
+		'url'          => $url,
+		'status_code'  => (int) wp_remote_retrieve_response_code( $response ),
+		'content_type' => (string) wp_remote_retrieve_header( $response, 'content-type' ),
+		'preview'      => implode( "\n", $preview_lines ),
+		'lines'        => $preview_lines,
+		'message'      => 'Fetched preview successfully.',
+	);
+}
+
+/**
+ * Build publisher/entity status from Rank Math settings.
+ *
+ * @return array<string,mixed>
+ */
+function mcp_rankmath_get_schema_status_data(): array {
+	$titles   = mcp_rankmath_get_titles_settings();
+	$type     = isset( $titles['knowledgegraph_type'] ) ? sanitize_key( (string) $titles['knowledgegraph_type'] ) : 'person';
+	$name     = isset( $titles['knowledgegraph_name'] ) && '' !== (string) $titles['knowledgegraph_name'] ? (string) $titles['knowledgegraph_name'] : get_bloginfo( 'name' );
+	$website  = isset( $titles['website_name'] ) && '' !== (string) $titles['website_name'] ? (string) $titles['website_name'] : $name;
+	$profiles = mcp_rankmath_get_social_profiles_from_titles( $titles );
+
+	return array(
+		'configured_knowledgegraph_type' => $type,
+		'effective_publisher_type'       => 'company' === $type ? 'Organization' : 'Person',
+		'effective_publisher_id'         => home_url( 'company' === $type ? '/#organization' : '/#person' ),
+		'publisher_name'                 => $name,
+		'website_name'                   => $website,
+		'publisher_url'                  => isset( $titles['url'] ) ? (string) $titles['url'] : '',
+		'organization_description'       => isset( $titles['organization_description'] ) ? (string) $titles['organization_description'] : '',
+		'logo_url'                       => isset( $titles['knowledgegraph_logo'] ) ? (string) $titles['knowledgegraph_logo'] : '',
+		'logo_id'                        => isset( $titles['knowledgegraph_logo_id'] ) ? (int) $titles['knowledgegraph_logo_id'] : 0,
+		'local_seo_enabled'              => ! empty( $titles['local_seo'] ),
+		'email'                          => isset( $titles['email'] ) ? (string) $titles['email'] : '',
+		'phone'                          => isset( $titles['phone'] ) ? (string) $titles['phone'] : '',
+		'phone_numbers'                  => isset( $titles['phone_numbers'] ) && is_array( $titles['phone_numbers'] ) ? $titles['phone_numbers'] : array(),
+		'address'                        => isset( $titles['local_address'] ) && is_array( $titles['local_address'] ) ? $titles['local_address'] : array(),
+		'address_format'                 => isset( $titles['local_address_format'] ) ? (string) $titles['local_address_format'] : '',
+		'social_profiles'                => $profiles,
+		'social_facebook'                => isset( $titles['social_url_facebook'] ) ? (string) $titles['social_url_facebook'] : '',
+		'twitter_handle'                 => isset( $titles['twitter_author_names'] ) ? ltrim( (string) $titles['twitter_author_names'], '@' ) : '',
+	);
+}
+
+/**
+ * Build llms status data from Rank Math settings and live preview.
+ *
+ * @param int $preview_lines Number of preview lines to fetch.
+ * @return array<string,mixed>
+ */
+function mcp_rankmath_get_llms_status_data( int $preview_lines = 12 ): array {
+	$general       = mcp_rankmath_get_general_settings();
+	$branding      = mcp_rankmath_get_llms_branding();
+	$rewrite       = mcp_rankmath_get_rewrite_status( 'llms.txt' );
+	$live_preview  = mcp_rankmath_fetch_local_preview( '/llms.txt', $preview_lines );
+	$post_types    = isset( $general['llms_post_types'] ) && is_array( $general['llms_post_types'] ) ? array_values( $general['llms_post_types'] ) : array();
+	$taxonomies    = isset( $general['llms_taxonomies'] ) && is_array( $general['llms_taxonomies'] ) ? array_values( $general['llms_taxonomies'] ) : array();
+
+	return array(
+		'module_active'      => class_exists( '\\RankMath\\Helper' ) && \RankMath\Helper::is_module_active( 'llms-txt' ),
+		'route_url'          => home_url( '/llms.txt' ),
+		'rewrite'            => $rewrite,
+		'post_types'         => $post_types,
+		'taxonomies'         => $taxonomies,
+		'limit'              => isset( $general['llms_limit'] ) ? (int) $general['llms_limit'] : 100,
+		'extra_content'      => isset( $general['llms_extra_content'] ) ? (string) $general['llms_extra_content'] : '',
+		'header_name'        => $branding['name'],
+		'header_description' => $branding['description'],
+		'effective_heading'  => $branding['name'] . ': ' . $branding['description'],
+		'sitemap_active'     => class_exists( '\\RankMath\\Helper' ) && \RankMath\Helper::is_module_active( 'sitemap' ),
+		'live_preview'       => $live_preview,
+	);
+}
+
+/**
+ * Get enabled sitemap object types grouped by post type and taxonomy.
+ *
+ * @return array<string,array<int,string>>
+ */
+function mcp_rankmath_get_sitemap_enabled_items(): array {
+	$sitemap = mcp_rankmath_get_sitemap_settings();
+	$post_types = array();
+	$taxonomies = array();
+
+	foreach ( $sitemap as $key => $value ) {
+		if ( 'on' !== $value && true !== $value ) {
+			continue;
+		}
+
+		if ( 0 === strpos( (string) $key, 'pt_' ) && str_ends_with( (string) $key, '_sitemap' ) ) {
+			$post_types[] = substr( (string) $key, 3, -8 );
+			continue;
+		}
+
+		if ( 0 === strpos( (string) $key, 'tax_' ) && str_ends_with( (string) $key, '_sitemap' ) ) {
+			$taxonomies[] = substr( (string) $key, 4, -8 );
+		}
+	}
+
+	sort( $post_types );
+	sort( $taxonomies );
+
+	return array(
+		'post_types' => $post_types,
+		'taxonomies' => $taxonomies,
+	);
+}
 
 /**
  * Get the current rewrite rules and llms.txt rule status.
@@ -521,6 +876,637 @@ function mcp_register_rankmath_abilities(): void {
 					'readonly'    => false,
 					'destructive' => false,
 					'idempotent'  => false,
+				),
+			),
+		)
+	);
+
+	// =========================================================================
+	// RANK MATH - Get Schema Status
+	// =========================================================================
+	wp_register_ability(
+		'rankmath/get-schema-status',
+		array(
+			'label'               => 'Get Rank Math Schema Status',
+			'description'         => 'Return effective global publisher/schema settings including publisher type, website name, logo, social profiles, and local SEO contact fields.',
+			'category'            => 'site',
+			'input_schema'        => array(
+				'type'                 => 'object',
+				'properties'           => new stdClass(),
+				'additionalProperties' => false,
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'success' => array( 'type' => 'boolean' ),
+					'status'  => array( 'type' => 'object' ),
+				),
+			),
+			'execute_callback'    => function (): array {
+				if ( ! mcp_rankmath_is_active() ) {
+					return array( 'success' => false, 'message' => 'Rank Math SEO plugin is not active.' );
+				}
+
+				return array(
+					'success' => true,
+					'status'  => mcp_rankmath_get_schema_status_data(),
+				);
+			},
+			'permission_callback' => function (): bool {
+				return current_user_can( 'manage_options' );
+			},
+			'meta'                => array(
+				'annotations' => array(
+					'readonly'    => true,
+					'destructive' => false,
+					'idempotent'  => true,
+				),
+			),
+		)
+	);
+
+	// =========================================================================
+	// RANK MATH - List Modules
+	// =========================================================================
+	wp_register_ability(
+		'rankmath/list-modules',
+		array(
+			'label'               => 'List Rank Math Modules',
+			'description'         => 'List Rank Math modules with active, disabled, and upgrade status.',
+			'category'            => 'site',
+			'input_schema'        => array(
+				'type'                 => 'object',
+				'properties'           => new stdClass(),
+				'additionalProperties' => false,
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'success' => array( 'type' => 'boolean' ),
+					'modules' => array( 'type' => 'array' ),
+					'count'   => array( 'type' => 'integer' ),
+				),
+			),
+			'execute_callback'    => function (): array {
+				if ( ! mcp_rankmath_is_active() ) {
+					return array( 'success' => false, 'message' => 'Rank Math SEO plugin is not active.' );
+				}
+
+				$modules = mcp_rankmath_get_module_records();
+				return array(
+					'success' => true,
+					'modules' => $modules,
+					'count'   => count( $modules ),
+				);
+			},
+			'permission_callback' => function (): bool {
+				return current_user_can( 'manage_options' );
+			},
+			'meta'                => array(
+				'annotations' => array(
+					'readonly'    => true,
+					'destructive' => false,
+					'idempotent'  => true,
+				),
+			),
+		)
+	);
+
+	// =========================================================================
+	// RANK MATH - Update Modules
+	// =========================================================================
+	wp_register_ability(
+		'rankmath/update-modules',
+		array(
+			'label'               => 'Update Rank Math Modules',
+			'description'         => 'Enable or disable Rank Math modules by slug.',
+			'category'            => 'site',
+			'input_schema'        => array(
+				'type'                 => 'object',
+				'properties'           => array(
+					'enable'  => array(
+						'type'  => 'array',
+						'items' => array( 'type' => 'string' ),
+					),
+					'disable' => array(
+						'type'  => 'array',
+						'items' => array( 'type' => 'string' ),
+					),
+				),
+				'additionalProperties' => false,
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'success' => array( 'type' => 'boolean' ),
+					'updated' => array( 'type' => 'object' ),
+					'modules' => array( 'type' => 'array' ),
+					'message' => array( 'type' => 'string' ),
+				),
+			),
+			'execute_callback'    => function ( array $input = array() ): array {
+				if ( ! mcp_rankmath_is_active() || ! class_exists( '\\RankMath\\Helper' ) ) {
+					return array( 'success' => false, 'message' => 'Rank Math SEO plugin is not active.' );
+				}
+
+				$enable  = isset( $input['enable'] ) && is_array( $input['enable'] ) ? array_map( 'sanitize_key', $input['enable'] ) : array();
+				$disable = isset( $input['disable'] ) && is_array( $input['disable'] ) ? array_map( 'sanitize_key', $input['disable'] ) : array();
+
+				if ( empty( $enable ) && empty( $disable ) ) {
+					return array( 'success' => false, 'message' => 'No module changes provided.' );
+				}
+
+				$changes = array();
+				foreach ( $enable as $module ) {
+					if ( '' !== $module ) {
+						$changes[ $module ] = 'on';
+					}
+				}
+				foreach ( $disable as $module ) {
+					if ( '' !== $module ) {
+						$changes[ $module ] = 'off';
+					}
+				}
+
+				\RankMath\Helper::update_modules( $changes );
+
+				$route_modules = array_intersect( array_keys( $changes ), array( 'llms-txt', 'sitemap' ) );
+				if ( ! empty( $route_modules ) && function_exists( 'flush_rewrite_rules' ) ) {
+					flush_rewrite_rules( false );
+				}
+
+				if ( method_exists( '\\RankMath\\Helper', 'clear_cache' ) ) {
+					\RankMath\Helper::clear_cache( 'mcp-rankmath-update-modules' );
+				}
+
+				return array(
+					'success' => true,
+					'updated' => array(
+						'enable'  => array_values( $enable ),
+						'disable' => array_values( $disable ),
+					),
+					'modules' => mcp_rankmath_get_module_records(),
+					'message' => 'Rank Math modules updated.',
+				);
+			},
+			'permission_callback' => function (): bool {
+				return current_user_can( 'manage_options' );
+			},
+			'meta'                => array(
+				'annotations' => array(
+					'readonly'    => false,
+					'destructive' => false,
+					'idempotent'  => false,
+				),
+			),
+		)
+	);
+
+	// =========================================================================
+	// RANK MATH - Get Rewrite Status
+	// =========================================================================
+	wp_register_ability(
+		'rankmath/get-rewrite-status',
+		array(
+			'label'               => 'Get Rank Math Rewrite Status',
+			'description'         => 'Inspect stored rewrite rules for llms.txt, sitemap_index.xml, or a custom regex.',
+			'category'            => 'site',
+			'input_schema'        => array(
+				'type'                 => 'object',
+				'properties'           => array(
+					'endpoint'     => array(
+						'type'        => 'string',
+						'enum'        => array( 'llms.txt', 'sitemap_index.xml', 'custom' ),
+						'default'     => 'llms.txt',
+					),
+					'custom_regex' => array(
+						'type'        => 'string',
+						'description' => 'Used only when endpoint=custom.',
+					),
+				),
+				'additionalProperties' => false,
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'success' => array( 'type' => 'boolean' ),
+					'status'  => array( 'type' => 'object' ),
+				),
+			),
+			'execute_callback'    => function ( array $input = array() ): array {
+				$endpoint     = isset( $input['endpoint'] ) ? sanitize_text_field( (string) $input['endpoint'] ) : 'llms.txt';
+				$custom_regex = isset( $input['custom_regex'] ) ? sanitize_text_field( (string) $input['custom_regex'] ) : '';
+
+				return array(
+					'success' => true,
+					'status'  => mcp_rankmath_get_rewrite_status( $endpoint, $custom_regex ),
+				);
+			},
+			'permission_callback' => function (): bool {
+				return current_user_can( 'manage_options' );
+			},
+			'meta'                => array(
+				'annotations' => array(
+					'readonly'    => true,
+					'destructive' => false,
+					'idempotent'  => true,
+				),
+			),
+		)
+	);
+
+	// =========================================================================
+	// RANK MATH - Get LLMS Status
+	// =========================================================================
+	wp_register_ability(
+		'rankmath/get-llms-status',
+		array(
+			'label'               => 'Get Rank Math llms.txt Status',
+			'description'         => 'Return Rank Math llms.txt module state, settings, rewrite status, and a live preview.',
+			'category'            => 'site',
+			'input_schema'        => array(
+				'type'                 => 'object',
+				'properties'           => array(
+					'preview_lines' => array(
+						'type'    => 'integer',
+						'default' => 12,
+					),
+				),
+				'additionalProperties' => false,
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'success' => array( 'type' => 'boolean' ),
+					'status'  => array( 'type' => 'object' ),
+				),
+			),
+			'execute_callback'    => function ( array $input = array() ): array {
+				if ( ! mcp_rankmath_is_active() ) {
+					return array( 'success' => false, 'message' => 'Rank Math SEO plugin is not active.' );
+				}
+
+				$preview_lines = isset( $input['preview_lines'] ) ? max( 1, min( 50, (int) $input['preview_lines'] ) ) : 12;
+
+				return array(
+					'success' => true,
+					'status'  => mcp_rankmath_get_llms_status_data( $preview_lines ),
+				);
+			},
+			'permission_callback' => function (): bool {
+				return current_user_can( 'manage_options' );
+			},
+			'meta'                => array(
+				'annotations' => array(
+					'readonly'    => true,
+					'destructive' => false,
+					'idempotent'  => true,
+				),
+			),
+		)
+	);
+
+	// =========================================================================
+	// RANK MATH - Preview LLMS
+	// =========================================================================
+	wp_register_ability(
+		'rankmath/preview-llms',
+		array(
+			'label'               => 'Preview Rank Math llms.txt',
+			'description'         => 'Fetch the live llms.txt output and return the first lines for inspection.',
+			'category'            => 'site',
+			'input_schema'        => array(
+				'type'                 => 'object',
+				'properties'           => array(
+					'max_lines' => array(
+						'type'    => 'integer',
+						'default' => 40,
+					),
+				),
+				'additionalProperties' => false,
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'success' => array( 'type' => 'boolean' ),
+					'preview' => array( 'type' => 'object' ),
+				),
+			),
+			'execute_callback'    => function ( array $input = array() ): array {
+				$max_lines = isset( $input['max_lines'] ) ? max( 1, min( 200, (int) $input['max_lines'] ) ) : 40;
+
+				return array(
+					'success' => true,
+					'preview' => mcp_rankmath_fetch_local_preview( '/llms.txt', $max_lines ),
+				);
+			},
+			'permission_callback' => function (): bool {
+				return current_user_can( 'manage_options' );
+			},
+			'meta'                => array(
+				'annotations' => array(
+					'readonly'    => true,
+					'destructive' => false,
+					'idempotent'  => true,
+				),
+			),
+		)
+	);
+
+	// =========================================================================
+	// RANK MATH - Update Publisher Profile
+	// =========================================================================
+	wp_register_ability(
+		'rankmath/update-publisher-profile',
+		array(
+			'label'               => 'Update Rank Math Publisher Profile',
+			'description'         => 'Safely update the global publisher/entity fields used by Rank Math schema and local SEO.',
+			'category'            => 'site',
+			'input_schema'        => array(
+				'type'                 => 'object',
+				'properties'           => array(
+					'knowledgegraph_type'    => array( 'type' => 'string', 'enum' => array( 'company', 'person' ) ),
+					'knowledgegraph_name'    => array( 'type' => 'string' ),
+					'website_name'           => array( 'type' => 'string' ),
+					'organization_description' => array( 'type' => 'string' ),
+					'url'                    => array( 'type' => 'string' ),
+					'knowledgegraph_logo'    => array( 'type' => 'string' ),
+					'knowledgegraph_logo_id' => array( 'type' => 'integer' ),
+					'email'                  => array( 'type' => 'string' ),
+					'phone'                  => array( 'type' => 'string' ),
+					'local_address'          => array( 'type' => 'object' ),
+					'local_address_format'   => array( 'type' => 'string' ),
+					'local_seo'              => array( 'type' => 'boolean' ),
+				),
+				'additionalProperties' => false,
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'success' => array( 'type' => 'boolean' ),
+					'updated' => array( 'type' => 'array' ),
+					'status'  => array( 'type' => 'object' ),
+				),
+			),
+			'execute_callback'    => function ( array $input = array() ): array {
+				$titles  = mcp_rankmath_get_titles_settings();
+				$updated = array();
+
+				$scalar_fields = array(
+					'knowledgegraph_type',
+					'knowledgegraph_name',
+					'website_name',
+					'organization_description',
+					'local_address_format',
+					'phone',
+				);
+				foreach ( $scalar_fields as $field ) {
+					if ( array_key_exists( $field, $input ) ) {
+						$titles[ $field ] = sanitize_text_field( (string) $input[ $field ] );
+						$updated[]        = $field;
+					}
+				}
+
+				if ( array_key_exists( 'url', $input ) ) {
+					$titles['url'] = esc_url_raw( (string) $input['url'] );
+					$updated[]     = 'url';
+				}
+
+				if ( array_key_exists( 'knowledgegraph_logo', $input ) ) {
+					$titles['knowledgegraph_logo'] = esc_url_raw( (string) $input['knowledgegraph_logo'] );
+					$updated[]                     = 'knowledgegraph_logo';
+				}
+
+				if ( array_key_exists( 'knowledgegraph_logo_id', $input ) ) {
+					$titles['knowledgegraph_logo_id'] = absint( $input['knowledgegraph_logo_id'] );
+					$updated[]                        = 'knowledgegraph_logo_id';
+				}
+
+				if ( array_key_exists( 'email', $input ) ) {
+					$titles['email'] = sanitize_email( (string) $input['email'] );
+					$updated[]       = 'email';
+				}
+
+				if ( array_key_exists( 'local_seo', $input ) ) {
+					$titles['local_seo'] = ! empty( $input['local_seo'] ) ? 'on' : 'off';
+					$updated[]           = 'local_seo';
+				}
+
+				if ( array_key_exists( 'local_address', $input ) && is_array( $input['local_address'] ) ) {
+					$address = array();
+					foreach ( $input['local_address'] as $key => $value ) {
+						$address[ sanitize_key( (string) $key ) ] = sanitize_text_field( (string) $value );
+					}
+					$titles['local_address'] = $address;
+					$updated[]               = 'local_address';
+				}
+
+				if ( empty( $updated ) ) {
+					return array( 'success' => false, 'message' => 'No publisher profile fields provided.' );
+				}
+
+				update_option( 'rank-math-options-titles', $titles );
+
+				return array(
+					'success' => true,
+					'updated' => $updated,
+					'status'  => mcp_rankmath_get_schema_status_data(),
+				);
+			},
+			'permission_callback' => function (): bool {
+				return current_user_can( 'manage_options' );
+			},
+			'meta'                => array(
+				'annotations' => array(
+					'readonly'    => false,
+					'destructive' => false,
+					'idempotent'  => true,
+				),
+			),
+		)
+	);
+
+	// =========================================================================
+	// RANK MATH - Get Social Profiles
+	// =========================================================================
+	wp_register_ability(
+		'rankmath/get-social-profiles',
+		array(
+			'label'               => 'Get Rank Math Social Profiles',
+			'description'         => 'Return the global social profile fields that feed Rank Math sameAs output.',
+			'category'            => 'site',
+			'input_schema'        => array(
+				'type'                 => 'object',
+				'properties'           => new stdClass(),
+				'additionalProperties' => false,
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'success' => array( 'type' => 'boolean' ),
+					'profiles' => array( 'type' => 'object' ),
+				),
+			),
+			'execute_callback'    => function (): array {
+				$titles = mcp_rankmath_get_titles_settings();
+				return array(
+					'success'  => true,
+					'profiles' => array(
+						'facebook_url'        => isset( $titles['social_url_facebook'] ) ? (string) $titles['social_url_facebook'] : '',
+						'twitter_handle'      => isset( $titles['twitter_author_names'] ) ? ltrim( (string) $titles['twitter_author_names'], '@' ) : '',
+						'additional_profiles' => isset( $titles['social_additional_profiles'] ) ? preg_split( '/\r\n|\r|\n/', (string) $titles['social_additional_profiles'] ) : array(),
+						'effective_same_as'   => mcp_rankmath_get_social_profiles_from_titles( $titles ),
+					),
+				);
+			},
+			'permission_callback' => function (): bool {
+				return current_user_can( 'manage_options' );
+			},
+			'meta'                => array(
+				'annotations' => array(
+					'readonly'    => true,
+					'destructive' => false,
+					'idempotent'  => true,
+				),
+			),
+		)
+	);
+
+	// =========================================================================
+	// RANK MATH - Update Social Profiles
+	// =========================================================================
+	wp_register_ability(
+		'rankmath/update-social-profiles',
+		array(
+			'label'               => 'Update Rank Math Social Profiles',
+			'description'         => 'Update the global social profile fields that feed Rank Math sameAs output.',
+			'category'            => 'site',
+			'input_schema'        => array(
+				'type'                 => 'object',
+				'properties'           => array(
+					'facebook_url'        => array( 'type' => 'string' ),
+					'twitter_handle'      => array( 'type' => 'string' ),
+					'additional_profiles' => array(
+						'oneOf' => array(
+							array(
+								'type'  => 'array',
+								'items' => array( 'type' => 'string' ),
+							),
+							array( 'type' => 'string' ),
+						),
+					),
+				),
+				'additionalProperties' => false,
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'success' => array( 'type' => 'boolean' ),
+					'updated' => array( 'type' => 'array' ),
+					'profiles' => array( 'type' => 'object' ),
+				),
+			),
+			'execute_callback'    => function ( array $input = array() ): array {
+				$titles  = mcp_rankmath_get_titles_settings();
+				$updated = array();
+
+				if ( array_key_exists( 'facebook_url', $input ) ) {
+					$titles['social_url_facebook'] = esc_url_raw( (string) $input['facebook_url'] );
+					$updated[]                     = 'facebook_url';
+				}
+
+				if ( array_key_exists( 'twitter_handle', $input ) ) {
+					$titles['twitter_author_names'] = ltrim( sanitize_text_field( (string) $input['twitter_handle'] ), '@' );
+					$updated[]                      = 'twitter_handle';
+				}
+
+				if ( array_key_exists( 'additional_profiles', $input ) ) {
+					$titles['social_additional_profiles'] = mcp_rankmath_normalize_additional_profiles( $input['additional_profiles'] );
+					$updated[]                            = 'additional_profiles';
+				}
+
+				if ( empty( $updated ) ) {
+					return array( 'success' => false, 'message' => 'No social profile changes provided.' );
+				}
+
+				update_option( 'rank-math-options-titles', $titles );
+
+				return array(
+					'success' => true,
+					'updated' => $updated,
+					'profiles' => array(
+						'facebook_url'        => isset( $titles['social_url_facebook'] ) ? (string) $titles['social_url_facebook'] : '',
+						'twitter_handle'      => isset( $titles['twitter_author_names'] ) ? ltrim( (string) $titles['twitter_author_names'], '@' ) : '',
+						'additional_profiles' => isset( $titles['social_additional_profiles'] ) ? preg_split( '/\r\n|\r|\n/', (string) $titles['social_additional_profiles'] ) : array(),
+						'effective_same_as'   => mcp_rankmath_get_social_profiles_from_titles( $titles ),
+					),
+				);
+			},
+			'permission_callback' => function (): bool {
+				return current_user_can( 'manage_options' );
+			},
+			'meta'                => array(
+				'annotations' => array(
+					'readonly'    => false,
+					'destructive' => false,
+					'idempotent'  => true,
+				),
+			),
+		)
+	);
+
+	// =========================================================================
+	// RANK MATH - Get Sitemap Status
+	// =========================================================================
+	wp_register_ability(
+		'rankmath/get-sitemap-status',
+		array(
+			'label'               => 'Get Rank Math Sitemap Status',
+			'description'         => 'Return sitemap module state, enabled object types, rewrite status, and a live sitemap index check.',
+			'category'            => 'site',
+			'input_schema'        => array(
+				'type'                 => 'object',
+				'properties'           => new stdClass(),
+				'additionalProperties' => false,
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'success' => array( 'type' => 'boolean' ),
+					'status'  => array( 'type' => 'object' ),
+				),
+			),
+			'execute_callback'    => function (): array {
+				if ( ! mcp_rankmath_is_active() ) {
+					return array( 'success' => false, 'message' => 'Rank Math SEO plugin is not active.' );
+				}
+
+				$sitemap         = mcp_rankmath_get_sitemap_settings();
+				$enabled_objects = mcp_rankmath_get_sitemap_enabled_items();
+				$preview         = mcp_rankmath_fetch_local_preview( '/sitemap_index.xml', 8 );
+
+				return array(
+					'success' => true,
+					'status'  => array(
+						'module_active'     => class_exists( '\\RankMath\\Helper' ) && \RankMath\Helper::is_module_active( 'sitemap' ),
+						'route_url'         => home_url( '/sitemap_index.xml' ),
+						'rewrite'           => mcp_rankmath_get_rewrite_status( 'sitemap_index.xml' ),
+						'include_images'    => ! empty( $sitemap['include_images'] ),
+						'links_per_sitemap' => isset( $sitemap['links_per_sitemap'] ) ? (int) $sitemap['links_per_sitemap'] : 0,
+						'post_types'        => $enabled_objects['post_types'],
+						'taxonomies'        => $enabled_objects['taxonomies'],
+						'live_preview'      => $preview,
+					),
+				);
+			},
+			'permission_callback' => function (): bool {
+				return current_user_can( 'manage_options' );
+			},
+			'meta'                => array(
+				'annotations' => array(
+					'readonly'    => true,
+					'destructive' => false,
+					'idempotent'  => true,
 				),
 			),
 		)

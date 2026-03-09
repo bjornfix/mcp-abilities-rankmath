@@ -4,7 +4,7 @@ Tags: seo, rank math, mcp, api, automation
 Requires at least: 6.9
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 1.0.11
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -26,6 +26,26 @@ This add-on plugin extends [MCP Expose Abilities](https://devenia.com/plugins/mc
 **rankmath/get-options** - Get Rank Math option values by name.
 
 **rankmath/update-options** - Update Rank Math option values by name.
+
+**rankmath/get-schema-status** - Return effective global publisher/schema settings including publisher type, logo, and social profiles.
+
+**rankmath/list-modules** - List Rank Math modules with active and disabled status.
+
+**rankmath/update-modules** - Enable or disable Rank Math modules by slug.
+
+**rankmath/get-rewrite-status** - Inspect stored rewrite rules for llms.txt, sitemap_index.xml, or a custom regex.
+
+**rankmath/get-llms-status** - Return llms.txt module state, settings, rewrite status, and a live preview.
+
+**rankmath/preview-llms** - Fetch the live llms.txt output and return the first lines for inspection.
+
+**rankmath/update-publisher-profile** - Safely update the global publisher/entity fields used by Rank Math schema and local SEO.
+
+**rankmath/get-social-profiles** - Return the global social profile fields that feed Rank Math sameAs output.
+
+**rankmath/update-social-profiles** - Update the global social profile fields that feed Rank Math sameAs output.
+
+**rankmath/get-sitemap-status** - Return sitemap module state, enabled object types, rewrite status, and a live sitemap index check.
 
 **rankmath/refresh-llms-route** - Verify the Rank Math llms.txt rewrite rule and flush rewrite rules when needed.
 
@@ -65,6 +85,10 @@ This add-on plugin extends [MCP Expose Abilities](https://devenia.com/plugins/mc
 5. The abilities are now available via the MCP endpoint
 
 == Changelog ==
+
+= 1.1.0 =
+* Added: schema status, module management, rewrite inspection, llms status/preview, publisher profile, social profiles, and sitemap status abilities
+* Improved: publisher/schema and llms debugging can now be done without raw option spelunking
 
 = 1.0.11 =
 * Added: llms.txt-only title override so Rank Math can output `Log In: Everywhere!` without changing global entity/schema settings
