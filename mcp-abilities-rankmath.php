@@ -3,7 +3,7 @@
  * Plugin Name: MCP Abilities - Rank Math
  * Plugin URI: https://github.com/bjornfix/mcp-abilities-rankmath
  * Description: Rank Math SEO abilities for MCP. Get and update meta descriptions, titles, focus keywords, and other SEO settings.
- * Version: 1.1.2
+ * Version: 1.1.3
  * Author: Devenia
  * Author URI: https://devenia.com
  * License: GPL-2.0+
@@ -1726,7 +1726,7 @@ function mcp_register_rankmath_abilities(): void {
 		'rankmath/update-meta',
 		array(
 			'label'               => 'Update Rank Math SEO Meta',
-			'description'         => 'Update Rank Math SEO meta data for a post or page. Can update title, description, focus keyword, robots, canonical URL, and content flags.',
+			'description'         => 'Update Rank Math SEO meta data for a post or page. Can update title, description, focus keyword, robots, canonical URL, and content flags. Also accepts title/description/keyword aliases for convenience.',
 			'category'            => 'site',
 			'input_schema'        => array(
 				'type'                 => 'object',
@@ -1740,13 +1740,25 @@ function mcp_register_rankmath_abilities(): void {
 						'type'        => 'string',
 						'description' => 'Custom SEO title. Use variables like %title%, %sitename%, %sep%.',
 					),
+					'title'           => array(
+						'type'        => 'string',
+						'description' => 'Alias for seo_title.',
+					),
 					'seo_description' => array(
 						'type'        => 'string',
 						'description' => 'Meta description (recommended: 150-160 characters).',
 					),
+					'description'     => array(
+						'type'        => 'string',
+						'description' => 'Alias for seo_description.',
+					),
 					'focus_keyword'   => array(
 						'type'        => 'string',
 						'description' => 'Focus keyword(s). Separate multiple with commas.',
+					),
+					'keyword'         => array(
+						'type'        => 'string',
+						'description' => 'Alias for focus_keyword.',
 					),
 					'robots'          => array(
 						'type'        => 'array',
@@ -1792,23 +1804,26 @@ function mcp_register_rankmath_abilities(): void {
 					return $result;
 				}
 
-				$updated = array();
+				$updated         = array();
+				$seo_title_input = $input['seo_title'] ?? $input['title'] ?? null;
+				$seo_desc_input  = $input['seo_description'] ?? $input['description'] ?? null;
+				$focus_input     = $input['focus_keyword'] ?? $input['keyword'] ?? null;
 
 				// Update SEO title.
-				if ( isset( $input['seo_title'] ) ) {
-					update_post_meta( $post_id, 'rank_math_title', sanitize_text_field( $input['seo_title'] ) );
+				if ( null !== $seo_title_input ) {
+					update_post_meta( $post_id, 'rank_math_title', sanitize_text_field( $seo_title_input ) );
 					$updated[] = 'seo_title';
 				}
 
 				// Update SEO description.
-				if ( isset( $input['seo_description'] ) ) {
-					update_post_meta( $post_id, 'rank_math_description', sanitize_textarea_field( $input['seo_description'] ) );
+				if ( null !== $seo_desc_input ) {
+					update_post_meta( $post_id, 'rank_math_description', sanitize_textarea_field( $seo_desc_input ) );
 					$updated[] = 'seo_description';
 				}
 
 				// Update focus keyword.
-				if ( isset( $input['focus_keyword'] ) ) {
-					update_post_meta( $post_id, 'rank_math_focus_keyword', sanitize_text_field( $input['focus_keyword'] ) );
+				if ( null !== $focus_input ) {
+					update_post_meta( $post_id, 'rank_math_focus_keyword', sanitize_text_field( $focus_input ) );
 					$updated[] = 'focus_keyword';
 				}
 

@@ -6,7 +6,7 @@ Rank Math SEO abilities for WordPress via MCP.
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/gpl-2.0)
 
 **Tested up to:** 6.9
-**Stable tag:** 1.1.2
+**Stable tag:** 1.1.3
 **Requires PHP:** 8.0
 **License:** GPLv2 or later
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html
@@ -53,7 +53,7 @@ This add-on plugin exposes Rank Math SEO functionality through MCP (Model Contex
 | `rankmath/get-sitemap-status` | Return sitemap module state, enabled object types, and live sitemap check |
 | `rankmath/refresh-llms-route` | Verify the Rank Math `llms.txt` rewrite rule and flush rewrites when needed |
 | `rankmath/get-meta` | Get SEO metadata for a single post or page |
-| `rankmath/update-meta` | Update SEO metadata (title, description, focus keyword, robots, canonical, flags) |
+| `rankmath/update-meta` | Update SEO metadata (title, description, focus keyword, robots, canonical, flags, plus common aliases) |
 | `rankmath/bulk-get-meta` | Retrieve SEO metadata for multiple posts with filtering |
 | `rankmath/list-404-logs` | List recent Rank Math 404 log entries |
 | `rankmath/delete-404-logs` | Delete 404 log entries by ID |
@@ -82,7 +82,7 @@ This add-on plugin exposes Rank Math SEO functionality through MCP (Model Contex
   "ability_name": "rankmath/update-meta",
   "parameters": {
     "id": 123,
-    "seo_description": "Updated meta description with focus keyword included."
+    "description": "Updated meta description with focus keyword included."
   }
 }
 ```
@@ -106,6 +106,9 @@ This add-on plugin exposes Rank Math SEO functionality through MCP (Model Contex
 ```
 
 ## Changelog
+
+### 1.1.3
+- Improved: `rankmath/update-meta` now accepts the convenience aliases `title`, `description`, and `keyword` alongside the canonical SEO field names
 
 ### 1.1.2
 - Fixed: moved organization contact restoration to Rank Math's final validated schema filter so public JSON-LD now keeps the configured contact fields
