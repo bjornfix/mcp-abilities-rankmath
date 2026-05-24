@@ -2,9 +2,9 @@
 Contributors: devenia
 Tags: seo, rank math, mcp, api, automation
 Requires at least: 6.9
-Tested up to: 6.9
+Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.1.3
+Stable tag: 1.1.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -49,11 +49,11 @@ This add-on plugin extends [MCP Expose Abilities](https://devenia.com/plugins/mc
 
 **rankmath/refresh-llms-route** - Verify the Rank Math llms.txt rewrite rule and flush rewrite rules when needed.
 
-**rankmath/get-meta** - Get SEO metadata for a single post or page including title, description, focus keyword, robots directives, canonical URL, and content flags.
+**rankmath/get-meta** - Get SEO metadata for a single post or page including title, description, focus keyword, SEO score, robots directives, canonical URL, and content flags.
 
 **rankmath/update-meta** - Update SEO metadata for a post or page. Supports title, description, focus keyword, robots, canonical URL, pillar content, and cornerstone content flags, plus common aliases for title, description, and keyword.
 
-**rankmath/bulk-get-meta** - Retrieve SEO metadata for multiple posts with filtering options. Filter by post type, search by title, or find posts missing meta descriptions.
+**rankmath/bulk-get-meta** - Retrieve SEO metadata and SEO scores for multiple posts with filtering options. Filter by post type, search by title, or find posts missing meta descriptions.
 
 **rankmath/list-404-logs** - List recent Rank Math 404 log entries.
 
@@ -85,6 +85,9 @@ This add-on plugin extends [MCP Expose Abilities](https://devenia.com/plugins/mc
 5. The abilities are now available via the MCP endpoint
 
 == Changelog ==
+
+= 1.1.4 =
+* Added: `rankmath/get-meta` and `rankmath/bulk-get-meta` now include the stored Rank Math SEO score as `seo_score`.
 
 = 1.1.3 =
 * Improved: `rankmath/update-meta` now accepts the convenience aliases `title`, `description`, and `keyword` alongside the canonical SEO field names

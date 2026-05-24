@@ -3,12 +3,13 @@
  * Plugin Name: MCP Abilities - Rank Math
  * Plugin URI: https://github.com/bjornfix/mcp-abilities-rankmath
  * Description: Rank Math SEO abilities for MCP. Get and update meta descriptions, titles, focus keywords, and other SEO settings.
- * Version: 1.1.3
+ * Version: 1.1.4
  * Author: Devenia
  * Author URI: https://devenia.com
  * License: GPL-2.0+
  * License URI: http://www.gnu.org/licenses/gpl-2.0.txt
  * Requires at least: 6.9
+ * Tested up to: 7.0
  * Requires PHP: 8.0
  *
  * @package MCP_Abilities_RankMath
@@ -51,10 +52,30 @@ function mcp_rankmath_get_meta_keys(): array {
 		'rank_math_focus_keyword',
 		'rank_math_robots',
 		'rank_math_canonical_url',
+		'rank_math_seo_score',
 		'rank_math_primary_category',
 		'rank_math_pillar_content',
 		'rank_math_cornerstone_content',
 	);
+}
+
+/**
+ * Get the stored Rank Math SEO score for a post.
+ *
+ * Rank Math stores the dashboard score in post meta when a score has been
+ * calculated. Missing or non-numeric values are returned as null so agents can
+ * distinguish "not scored yet" from a real zero score.
+ *
+ * @param int $post_id Post ID.
+ * @return int|null
+ */
+function mcp_rankmath_get_seo_score( int $post_id ): ?int {
+	$score = get_post_meta( $post_id, 'rank_math_seo_score', true );
+	if ( '' === $score || null === $score || ! is_numeric( $score ) ) {
+		return null;
+	}
+
+	return max( 0, min( 100, (int) $score ) );
 }
 
 /**
@@ -1631,7 +1652,7 @@ function mcp_register_rankmath_abilities(): void {
 		'rankmath/get-meta',
 		array(
 			'label'               => 'Get Rank Math SEO Meta',
-			'description'         => 'Get Rank Math SEO meta data for a post or page. Returns title, description, focus keyword, robots, and other SEO settings.',
+			'description'         => 'Get Rank Math SEO meta data for a post or page. Returns title, description, focus keyword, SEO score, robots, and other SEO settings.',
 			'category'            => 'site',
 			'input_schema'        => array(
 				'type'                 => 'object',
@@ -1660,6 +1681,12 @@ function mcp_register_rankmath_abilities(): void {
 					'seo_title'     => array( 'type' => 'string' ),
 					'seo_description' => array( 'type' => 'string' ),
 					'focus_keyword' => array( 'type' => 'string' ),
+					'seo_score'     => array(
+						'type'        => array( 'integer', 'null' ),
+						'description' => 'Stored Rank Math SEO score from rank_math_seo_score, or null when no score has been calculated.',
+						'minimum'     => 0,
+						'maximum'     => 100,
+					),
 					'robots'        => array( 'type' => 'array' ),
 					'canonical_url' => array( 'type' => 'string' ),
 					'is_pillar'     => array( 'type' => 'boolean' ),
@@ -1686,6 +1713,7 @@ function mcp_register_rankmath_abilities(): void {
 				$seo_title     = get_post_meta( $post_id, 'rank_math_title', true );
 				$seo_desc      = get_post_meta( $post_id, 'rank_math_description', true );
 				$focus_keyword = get_post_meta( $post_id, 'rank_math_focus_keyword', true );
+				$seo_score     = mcp_rankmath_get_seo_score( $post_id );
 				$robots        = get_post_meta( $post_id, 'rank_math_robots', true );
 				$canonical     = get_post_meta( $post_id, 'rank_math_canonical_url', true );
 				$is_pillar     = get_post_meta( $post_id, 'rank_math_pillar_content', true );
@@ -1700,6 +1728,7 @@ function mcp_register_rankmath_abilities(): void {
 					'seo_title'       => $seo_title ?: '',
 					'seo_description' => $seo_desc ?: '',
 					'focus_keyword'   => $focus_keyword ?: '',
+					'seo_score'       => $seo_score,
 					'robots'          => is_array( $robots ) ? $robots : array(),
 					'canonical_url'   => $canonical ?: '',
 					'is_pillar'       => $is_pillar === 'on',
@@ -1903,7 +1932,7 @@ function mcp_register_rankmath_abilities(): void {
 		'rankmath/bulk-get-meta',
 		array(
 			'label'               => 'Bulk Get Rank Math SEO Meta',
-			'description'         => 'Get Rank Math SEO meta for multiple posts/pages. Useful for auditing SEO across content.',
+			'description'         => 'Get Rank Math SEO meta for multiple posts/pages, including stored Rank Math SEO scores. Useful for auditing SEO across content.',
 			'category'            => 'site',
 			'input_schema'        => array(
 				'type'                 => 'object',
@@ -2005,6 +2034,7 @@ function mcp_register_rankmath_abilities(): void {
 						'seo_title'       => get_post_meta( $post->ID, 'rank_math_title', true ) ?: '',
 						'seo_description' => $seo_desc ?: '',
 						'focus_keyword'   => get_post_meta( $post->ID, 'rank_math_focus_keyword', true ) ?: '',
+						'seo_score'       => mcp_rankmath_get_seo_score( $post->ID ),
 					);
 
 					// Stop when we have enough items.

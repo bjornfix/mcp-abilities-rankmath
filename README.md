@@ -5,8 +5,8 @@ Rank Math SEO abilities for WordPress via MCP.
 [![GitHub release](https://img.shields.io/github/v/release/bjornfix/mcp-abilities-rankmath)](https://github.com/bjornfix/mcp-abilities-rankmath/releases)
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/gpl-2.0)
 
-**Tested up to:** 6.9
-**Stable tag:** 1.1.3
+**Tested up to:** 7.0
+**Stable tag:** 1.1.4
 **Requires PHP:** 8.0
 **License:** GPLv2 or later
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html
@@ -69,9 +69,9 @@ This add-on closes that gap. You can ask the agent to inspect metadata, review r
 | `rankmath/update-social-profiles` | Update social profile fields feeding `sameAs` |
 | `rankmath/get-sitemap-status` | Return sitemap module state, enabled object types, and live sitemap check |
 | `rankmath/refresh-llms-route` | Verify the Rank Math `llms.txt` rewrite rule and flush rewrites when needed |
-| `rankmath/get-meta` | Get SEO metadata for a single post or page |
+| `rankmath/get-meta` | Get SEO metadata and stored SEO score for a single post or page |
 | `rankmath/update-meta` | Update SEO metadata (title, description, focus keyword, robots, canonical, flags, plus common aliases) |
-| `rankmath/bulk-get-meta` | Retrieve SEO metadata for multiple posts with filtering |
+| `rankmath/bulk-get-meta` | Retrieve SEO metadata and stored SEO scores for multiple posts with filtering |
 | `rankmath/list-404-logs` | List recent Rank Math 404 log entries |
 | `rankmath/delete-404-logs` | Delete 404 log entries by ID |
 | `rankmath/clear-404-logs` | Clear all Rank Math 404 logs (requires confirm) |
@@ -123,6 +123,9 @@ This add-on closes that gap. You can ask the agent to inspect metadata, review r
 ```
 
 ## Changelog
+
+### 1.1.4
+- Added: `rankmath/get-meta` and `rankmath/bulk-get-meta` now include the stored Rank Math SEO score as `seo_score`
 
 ### 1.1.3
 - Improved: `rankmath/update-meta` now accepts the convenience aliases `title`, `description`, and `keyword` alongside the canonical SEO field names
