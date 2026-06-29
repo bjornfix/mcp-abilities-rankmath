@@ -4,7 +4,7 @@ Tags: seo, rank math, mcp, api, automation
 Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.1.5
+Stable tag: 1.1.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -55,6 +55,8 @@ This add-on plugin extends [MCP Expose Abilities](https://devenia.com/plugins/mc
 
 **rankmath/bulk-get-meta** - Retrieve SEO metadata and SEO scores for multiple posts with filtering options. Filter by post type, search by title, or find posts missing meta descriptions.
 
+**rankmath/get-inbound-links** - Report internal inbound links to one target or list linked internal targets by scanning WordPress content and navigation menus.
+
 **rankmath/list-404-logs** - List recent Rank Math 404 log entries.
 
 **rankmath/delete-404-logs** - Delete 404 log entries by ID.
@@ -85,6 +87,9 @@ This add-on plugin extends [MCP Expose Abilities](https://devenia.com/plugins/mc
 5. The abilities are now available via the MCP endpoint
 
 == Changelog ==
+
+= 1.1.6 =
+* Added: `rankmath/get-inbound-links` builds an internal inbound-link report from WordPress content and navigation menus.
 
 = 1.1.5 =
 * Fixed: `rankmath/create-redirection` now rejects exact sources that normalize to the same path as the destination.

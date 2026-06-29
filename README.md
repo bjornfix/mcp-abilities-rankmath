@@ -8,7 +8,7 @@ Rank Math SEO abilities for MCP. Get and update meta descriptions, titles, focus
 [![PHP](https://img.shields.io/badge/PHP-8.0%2B-purple.svg)](https://php.net)
 
 **Tested up to:** 7.0
-**Stable tag:** 1.1.5
+**Stable tag:** 1.1.6
 **License:** GPLv2 or later
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -107,7 +107,7 @@ If you are new to the stack, use this order:
 
 If you skip base-stack verification and start with add-ons immediately, troubleshooting gets harder than it needs to be.
 
-## Abilities (23)
+## Abilities (24)
 
 | Ability | Description |
 |---------|-------------|
@@ -128,6 +128,7 @@ If you skip base-stack verification and start with add-ons immediately, troubles
 | `rankmath/get-meta` | Get SEO metadata and stored SEO score for a single post or page |
 | `rankmath/update-meta` | Update SEO metadata (title, description, focus keyword, robots, canonical, flags, plus common aliases) |
 | `rankmath/bulk-get-meta` | Retrieve SEO metadata and stored SEO scores for multiple posts with filtering |
+| `rankmath/get-inbound-links` | Report internal inbound links to one target or list linked internal targets |
 | `rankmath/list-404-logs` | List recent Rank Math 404 log entries |
 | `rankmath/delete-404-logs` | Delete 404 log entries by ID |
 | `rankmath/clear-404-logs` | Clear all Rank Math 404 logs (requires confirm) |
@@ -179,6 +180,10 @@ If you skip base-stack verification and start with add-ons immediately, troubles
 ```
 
 ## Changelog
+
+### 1.1.6
+- Added: `rankmath/get-inbound-links` builds an internal inbound-link report
+  from WordPress content and navigation menus
 
 ### 1.1.5
 - Fixed: `rankmath/create-redirection` now rejects exact sources that normalize

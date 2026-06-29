@@ -3,7 +3,7 @@
  * Plugin Name: MCP Abilities - Rank Math
  * Plugin URI: https://github.com/bjornfix/mcp-abilities-rankmath
  * Description: Rank Math SEO abilities for MCP. Get and update meta descriptions, titles, focus keywords, and other SEO settings.
- * Version: 1.1.5
+ * Version: 1.1.6
  * Author: Devenia
  * Author URI: https://devenia.com
  * License: GPL-2.0+
@@ -765,6 +765,298 @@ function mcp_rankmath_get_post_or_error( int $post_id, string $action ): array {
 	return array(
 		'success' => true,
 		'post'    => $post,
+	);
+}
+
+/**
+ * Normalize an internal URL to a comparable path.
+ *
+ * Query strings and fragments are intentionally ignored. The workflow question
+ * is whether a content object is linked at all, not whether each tracking
+ * variant has a separate inbound edge.
+ *
+ * @param string $url URL or root-relative path.
+ * @return string Normalized path, or empty string for non-site URLs.
+ */
+function mcp_rankmath_normalize_internal_link_path( string $url ): string {
+	$url = trim( html_entity_decode( $url, ENT_QUOTES | ENT_HTML5 ) );
+	if ( '' === $url || str_starts_with( $url, '#' ) ) {
+		return '';
+	}
+
+	$scheme = wp_parse_url( $url, PHP_URL_SCHEME );
+	if ( is_string( $scheme ) && in_array( strtolower( $scheme ), array( 'mailto', 'tel', 'sms', 'javascript', 'data' ), true ) ) {
+		return '';
+	}
+
+	if ( str_starts_with( $url, '//' ) ) {
+		$url = ( is_ssl() ? 'https:' : 'http:' ) . $url;
+	}
+
+	$home_host = wp_parse_url( home_url(), PHP_URL_HOST );
+	$url_host  = wp_parse_url( $url, PHP_URL_HOST );
+	if ( is_string( $url_host ) && '' !== $url_host ) {
+		$home_host_normalized = strtolower( preg_replace( '/^www\./', '', (string) $home_host ) );
+		$url_host_normalized  = strtolower( preg_replace( '/^www\./', '', $url_host ) );
+		if ( $home_host_normalized !== $url_host_normalized ) {
+			return '';
+		}
+	}
+
+	$path = wp_parse_url( $url, PHP_URL_PATH );
+	if ( ! is_string( $path ) || '' === $path ) {
+		$path = '/';
+	}
+
+	$path = '/' . ltrim( rawurldecode( $path ), '/' );
+	$path = preg_replace( '#/+#', '/', $path );
+	if ( '/' === $path ) {
+		return '/';
+	}
+
+	return trailingslashit( $path );
+}
+
+/**
+ * Extract normalized internal link paths from post content.
+ *
+ * @param string $content Post content.
+ * @return array<int,string>
+ */
+function mcp_rankmath_extract_internal_link_paths( string $content ): array {
+	if ( '' === $content || ! preg_match_all( "/\\bhref\\s*=\\s*([\\\"'])(.*?)\\1/i", $content, $matches ) ) {
+		return array();
+	}
+
+	$paths = array();
+	foreach ( $matches[2] as $url ) {
+		$path = mcp_rankmath_normalize_internal_link_path( (string) $url );
+		if ( '' !== $path ) {
+			$paths[] = $path;
+		}
+	}
+
+	return array_values( array_unique( $paths ) );
+}
+
+/**
+ * Get post types included in inbound-link scans.
+ *
+ * @param array<string,mixed> $input Ability input.
+ * @return array<int,string>
+ */
+function mcp_rankmath_get_inbound_scan_post_types( array $input ): array {
+	if ( isset( $input['post_types'] ) && is_array( $input['post_types'] ) && ! empty( $input['post_types'] ) ) {
+		return array_values(
+			array_unique(
+				array_filter(
+					array_map( 'sanitize_key', $input['post_types'] ),
+					static function ( string $post_type ): bool {
+						return '' !== $post_type && post_type_exists( $post_type );
+					}
+				)
+			)
+		);
+	}
+
+	$post_types = array_values( get_post_types( array( 'public' => true ), 'names' ) );
+	foreach ( array( 'gp_elements', 'wp_block', 'wp_navigation' ) as $post_type ) {
+		if ( post_type_exists( $post_type ) ) {
+			$post_types[] = $post_type;
+		}
+	}
+
+	return array_values( array_unique( array_diff( $post_types, array( 'attachment' ) ) ) );
+}
+
+/**
+ * Build an inbound-link graph from content and navigation menu items.
+ *
+ * @param array<string,mixed> $input Ability input.
+ * @return array<string,mixed>
+ */
+function mcp_rankmath_build_inbound_link_graph( array $input ): array {
+	$post_types       = mcp_rankmath_get_inbound_scan_post_types( $input );
+	$post_statuses    = isset( $input['post_statuses'] ) && is_array( $input['post_statuses'] ) ? $input['post_statuses'] : array( 'publish' );
+	$post_statuses    = array_values( array_unique( array_map( 'sanitize_key', $post_statuses ) ) );
+	$include_sources  = array_key_exists( 'include_sources', $input ) ? (bool) $input['include_sources'] : true;
+	$include_menus    = array_key_exists( 'include_menus', $input ) ? (bool) $input['include_menus'] : true;
+	$target_post_id   = isset( $input['target_post_id'] ) ? absint( $input['target_post_id'] ) : 0;
+	$target_url       = isset( $input['target_url'] ) ? esc_url_raw( (string) $input['target_url'] ) : '';
+	$target_paths     = array();
+	$target_post      = null;
+	$all_target_paths = array();
+
+	if ( $target_post_id > 0 ) {
+		$target_post = get_post( $target_post_id );
+		if ( ! $target_post ) {
+			return array( 'success' => false, 'message' => 'Target post not found.' );
+		}
+		$target_path = mcp_rankmath_normalize_internal_link_path( get_permalink( $target_post_id ) );
+		if ( '' !== $target_path ) {
+			$target_paths[] = $target_path;
+		}
+	}
+
+	if ( '' !== $target_url ) {
+		$target_path = mcp_rankmath_normalize_internal_link_path( $target_url );
+		if ( '' === $target_path ) {
+			return array( 'success' => false, 'message' => 'Target URL is not an internal site URL.' );
+		}
+		$target_paths[] = $target_path;
+	}
+
+	$target_paths = array_values( array_unique( $target_paths ) );
+	if ( empty( $target_paths ) ) {
+		$target_query = new WP_Query(
+			array(
+				'post_type'              => $post_types,
+				'post_status'            => $post_statuses,
+				'posts_per_page'         => -1,
+				'fields'                 => 'ids',
+				'no_found_rows'          => true,
+				'update_post_meta_cache' => false,
+				'update_post_term_cache' => false,
+			)
+		);
+
+		foreach ( $target_query->posts as $post_id ) {
+			$path = mcp_rankmath_normalize_internal_link_path( get_permalink( (int) $post_id ) );
+			if ( '' !== $path ) {
+				$all_target_paths[ $path ] = (int) $post_id;
+			}
+		}
+	} else {
+		foreach ( $target_paths as $path ) {
+			$all_target_paths[ $path ] = $target_post_id;
+		}
+	}
+
+	$counts  = array();
+	$sources = array();
+	foreach ( $all_target_paths as $path => $post_id ) {
+		$counts[ $path ]  = 0;
+		$sources[ $path ] = array();
+	}
+
+	$source_query = new WP_Query(
+		array(
+			'post_type'              => $post_types,
+			'post_status'            => $post_statuses,
+			'posts_per_page'         => -1,
+			'fields'                 => 'ids',
+			'no_found_rows'          => true,
+			'update_post_meta_cache' => false,
+			'update_post_term_cache' => false,
+		)
+	);
+
+	$scanned_sources = 0;
+	foreach ( $source_query->posts as $source_id ) {
+		$source_id = (int) $source_id;
+		$content   = (string) get_post_field( 'post_content', $source_id );
+		$paths     = mcp_rankmath_extract_internal_link_paths( $content );
+		if ( empty( $paths ) ) {
+			continue;
+		}
+		++$scanned_sources;
+
+		foreach ( $paths as $path ) {
+			if ( ! array_key_exists( $path, $all_target_paths ) ) {
+				continue;
+			}
+			if ( $source_id === (int) $all_target_paths[ $path ] ) {
+				continue;
+			}
+
+			++$counts[ $path ];
+			if ( $include_sources ) {
+				$sources[ $path ][] = array(
+					'source_type' => 'post',
+					'id'          => $source_id,
+					'title'       => get_the_title( $source_id ),
+					'post_type'   => get_post_type( $source_id ),
+					'url'         => get_permalink( $source_id ),
+				);
+			}
+		}
+	}
+
+	if ( $include_menus ) {
+		foreach ( wp_get_nav_menus() as $menu ) {
+			$items = wp_get_nav_menu_items( $menu->term_id );
+			if ( ! is_array( $items ) ) {
+				continue;
+			}
+
+			foreach ( $items as $item ) {
+				$path = mcp_rankmath_normalize_internal_link_path( (string) $item->url );
+				if ( '' === $path || ! array_key_exists( $path, $all_target_paths ) ) {
+					continue;
+				}
+
+				++$counts[ $path ];
+				if ( $include_sources ) {
+					$sources[ $path ][] = array(
+						'source_type' => 'nav_menu_item',
+						'id'          => (int) $item->ID,
+						'title'       => (string) $item->title,
+						'menu_id'     => (int) $menu->term_id,
+						'menu'        => (string) $menu->name,
+						'url'         => (string) $item->url,
+					);
+				}
+			}
+		}
+	}
+
+	$min_count = isset( $input['min_count'] ) ? max( 0, (int) $input['min_count'] ) : ( empty( $target_paths ) ? 1 : 0 );
+	$limit     = isset( $input['limit'] ) ? min( 500, max( 1, (int) $input['limit'] ) ) : 100;
+	$items     = array();
+
+	foreach ( $counts as $path => $count ) {
+		if ( $count < $min_count ) {
+			continue;
+		}
+
+		$post_id = (int) ( $all_target_paths[ $path ] ?? 0 );
+		$item    = array(
+			'target_post_id' => $post_id,
+			'target_title'   => $post_id > 0 ? get_the_title( $post_id ) : '',
+			'target_type'    => $post_id > 0 ? get_post_type( $post_id ) : '',
+			'target_url'     => $post_id > 0 ? get_permalink( $post_id ) : home_url( $path ),
+			'target_path'    => $path,
+			'inbound_count'  => (int) $count,
+		);
+
+		if ( $include_sources ) {
+			$item['sources'] = $sources[ $path ];
+		}
+
+		$items[] = $item;
+	}
+
+	usort(
+		$items,
+		static function ( array $a, array $b ): int {
+			$count_compare = (int) $b['inbound_count'] <=> (int) $a['inbound_count'];
+			if ( 0 !== $count_compare ) {
+				return $count_compare;
+			}
+			return strcmp( (string) $a['target_path'], (string) $b['target_path'] );
+		}
+	);
+
+	$items = array_slice( $items, 0, $limit );
+
+	return array(
+		'success'         => true,
+		'items'           => $items,
+		'count'           => count( $items ),
+		'scanned_sources' => $scanned_sources,
+		'post_types'      => $post_types,
+		'post_statuses'   => $post_statuses,
+		'target_paths'    => $target_paths,
 	);
 }
 
@@ -2101,6 +2393,92 @@ function mcp_register_rankmath_abilities(): void {
 					'page'    => $missing_desc ? 1 : $page,
 					'pages'   => $pages,
 				);
+			},
+			'permission_callback' => function (): bool {
+				return current_user_can( 'edit_posts' );
+			},
+			'meta'                => array(
+				'annotations' => array(
+					'readonly'    => true,
+					'destructive' => false,
+					'idempotent'  => true,
+				),
+			),
+		)
+	);
+
+	// =========================================================================
+	// RANK MATH - Get Inbound Links
+	// =========================================================================
+	wp_register_ability(
+		'rankmath/get-inbound-links',
+		array(
+			'label'               => 'Get Inbound Links',
+			'description'         => 'Build an internal inbound-link report from WordPress content and navigation menus. Use target_post_id or target_url to inspect one page, or omit both to list linked internal targets.',
+			'category'            => 'site',
+			'input_schema'        => array(
+				'type'                 => 'object',
+				'properties'           => array(
+					'target_post_id'  => array(
+						'type'        => 'integer',
+						'minimum'     => 1,
+						'description' => 'Optional target post/page ID to inspect.',
+					),
+					'target_url'      => array(
+						'type'        => 'string',
+						'description' => 'Optional internal target URL or path to inspect.',
+					),
+					'post_types'      => array(
+						'type'        => 'array',
+						'items'       => array( 'type' => 'string' ),
+						'description' => 'Optional source/target post types to scan. Defaults to public post types plus common reusable/template post types.',
+					),
+					'post_statuses'   => array(
+						'type'        => 'array',
+						'items'       => array( 'type' => 'string' ),
+						'description' => 'Optional post statuses to scan. Defaults to publish.',
+					),
+					'include_sources' => array(
+						'type'        => 'boolean',
+						'default'     => true,
+						'description' => 'Include source objects for each inbound link target.',
+					),
+					'include_menus'   => array(
+						'type'        => 'boolean',
+						'default'     => true,
+						'description' => 'Include WordPress navigation menu items as inbound link sources.',
+					),
+					'min_count'       => array(
+						'type'        => 'integer',
+						'default'     => 1,
+						'minimum'     => 0,
+						'description' => 'Minimum inbound count when listing all linked targets.',
+					),
+					'limit'           => array(
+						'type'        => 'integer',
+						'default'     => 100,
+						'minimum'     => 1,
+						'maximum'     => 500,
+						'description' => 'Maximum targets to return.',
+					),
+				),
+				'additionalProperties' => false,
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'success'         => array( 'type' => 'boolean' ),
+					'items'           => array( 'type' => 'array' ),
+					'count'           => array( 'type' => 'integer' ),
+					'scanned_sources' => array( 'type' => 'integer' ),
+					'post_types'      => array( 'type' => 'array' ),
+					'post_statuses'   => array( 'type' => 'array' ),
+					'target_paths'    => array( 'type' => 'array' ),
+					'message'         => array( 'type' => 'string' ),
+				),
+			),
+			'execute_callback'    => function ( array $input = array() ): array {
+				return mcp_rankmath_build_inbound_link_graph( $input );
 			},
 			'permission_callback' => function (): bool {
 				return current_user_can( 'edit_posts' );
