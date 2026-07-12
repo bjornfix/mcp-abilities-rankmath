@@ -4,7 +4,7 @@ Tags: seo, rank math, mcp, api, automation
 Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.1.10
+Stable tag: 1.1.11
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -103,6 +103,9 @@ This add-on plugin extends [MCP Expose Abilities](https://devenia.com/plugins/mc
 5. The abilities are now available via the MCP endpoint
 
 == Changelog ==
+
+= 1.1.11 =
+* Preserve documented Rank Math percent variables when sanitizing nested schema values.
 
 = 1.1.10 =
 * Expanded `rankmath/audit-faq-links` and the AI Translation Workflow guardrail to catch unparseable or empty Rank Math FAQ questions in addition to disallowed FAQ item links.

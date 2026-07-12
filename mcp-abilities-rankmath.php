@@ -3,7 +3,7 @@
  * Plugin Name: MCP Abilities - Rank Math
  * Plugin URI: https://github.com/bjornfix/mcp-abilities-rankmath
  * Description: Rank Math SEO abilities for MCP. Get and update meta descriptions, titles, focus keywords, and other SEO settings.
- * Version: 1.1.10
+ * Version: 1.1.11
  * Author: basicus
  * Author URI: https://profiles.wordpress.org/basicus/
  * License: GPL-2.0+
@@ -835,7 +835,7 @@ function mcp_rankmath_get_post_schema_meta( int $post_id ): array {
  */
 function mcp_rankmath_sanitize_schema_value( $value ) {
 	if ( is_array( $value ) ) {
-		return map_deep( $value, 'sanitize_text_field' );
+		return array_map( 'mcp_rankmath_sanitize_schema_value', $value );
 	}
 
 	if ( is_bool( $value ) || is_int( $value ) || is_float( $value ) ) {
@@ -845,13 +845,44 @@ function mcp_rankmath_sanitize_schema_value( $value ) {
 	if ( is_string( $value ) ) {
 		$decoded = json_decode( $value, true );
 		if ( JSON_ERROR_NONE === json_last_error() && is_array( $decoded ) ) {
-			return map_deep( $decoded, 'sanitize_text_field' );
+			return mcp_rankmath_sanitize_schema_value( $decoded );
 		}
 
-		return sanitize_textarea_field( $value );
+		return mcp_rankmath_sanitize_schema_string( $value );
 	}
 
 	return '';
+}
+
+/**
+ * Sanitize one schema string while preserving documented Rank Math variables.
+ *
+ * WordPress text sanitizers remove percent-encoded octets. That corrupts
+ * variables such as %date% because "%da" is interpreted as an encoded byte.
+ * Protect complete Rank Math variable tokens before sanitizing and restore
+ * only the exact tokens that were present in the input.
+ *
+ * @param string $value Schema string.
+ * @return string
+ */
+function mcp_rankmath_sanitize_schema_string( string $value ): string {
+	$variables = array();
+	$protected = preg_replace_callback(
+		'/%[A-Za-z][^%\r\n]*%/',
+		static function ( array $matches ) use ( &$variables ): string {
+			$placeholder               = '__MCP_RANKMATH_SCHEMA_VARIABLE_' . count( $variables ) . '__';
+			$variables[ $placeholder ] = $matches[0];
+			return $placeholder;
+		},
+		$value
+	);
+
+	if ( ! is_string( $protected ) ) {
+		return '';
+	}
+
+	$sanitized = sanitize_textarea_field( $protected );
+	return strtr( $sanitized, $variables );
 }
 
 /**

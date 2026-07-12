@@ -188,6 +188,9 @@ If you skip base-stack verification and start with add-ons immediately, troubles
 
 ## Changelog
 
+### 1.1.11
+- Preserves documented Rank Math percent variables such as `%date%` when sanitizing nested schema values.
+
 ### 1.1.8
 - Refactored ability registration into focused include modules for options,
   routes, site settings, content SEO, and logs/redirections. No MCP ability
