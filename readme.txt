@@ -4,7 +4,7 @@ Tags: seo, rank math, mcp, api, automation
 Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.1.11
+Stable tag: 1.1.12
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -104,6 +104,9 @@ This add-on plugin extends [MCP Expose Abilities](https://devenia.com/plugins/mc
 
 == Changelog ==
 
+= 1.1.12 =
+* Fixed: llms.txt now preserves the current WordPress site's own Rank Math title and description instead of applying plugin-owned branding
+
 = 1.1.11 =
 * Preserve documented Rank Math percent variables when sanitizing nested schema values.
 
@@ -142,9 +145,6 @@ This add-on plugin extends [MCP Expose Abilities](https://devenia.com/plugins/mc
 = 1.1.0 =
 * Added: schema status, module management, rewrite inspection, llms status/preview, publisher profile, social profiles, and sitemap status abilities
 * Improved: publisher/schema and llms debugging can now be done without raw option spelunking
-
-= 1.0.11 =
-* Added: llms.txt-only title override so Rank Math can output `Log In: Everywhere!` without changing global entity/schema settings
 
 = 1.0.9 =
 * Added: `rankmath/refresh-llms-route` to inspect and refresh the Rank Math `llms.txt` rewrite rule after module changes

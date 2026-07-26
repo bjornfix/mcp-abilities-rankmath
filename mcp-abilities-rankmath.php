@@ -3,7 +3,7 @@
  * Plugin Name: MCP Abilities - Rank Math
  * Plugin URI: https://github.com/bjornfix/mcp-abilities-rankmath
  * Description: Rank Math SEO abilities for MCP. Get and update meta descriptions, titles, focus keywords, and other SEO settings.
- * Version: 1.1.11
+ * Version: 1.1.12
  * Author: basicus
  * Author URI: https://profiles.wordpress.org/basicus/
  * License: GPL-2.0+
@@ -183,56 +183,6 @@ function mcp_rankmath_is_allowed_option_name( string $name ): bool {
 	}
 	return false;
 }
-
-/**
- * Get llms.txt brand overrides used for request-scoped heading output.
- *
- * @return array<string,string>
- */
-function mcp_rankmath_get_llms_branding(): array {
-	return array(
-		'name'        => 'Log In',
-		'description' => 'Everywhere!',
-	);
-}
-
-/**
- * Check whether the current request targets the dynamic llms.txt endpoint.
- *
- * @return bool
- */
-function mcp_rankmath_is_llms_request(): bool {
-	$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( (string) $_SERVER['REQUEST_URI'] ) ) : '';
-	if ( '' === $request_uri ) {
-		return false;
-	}
-
-	$path = wp_parse_url( $request_uri, PHP_URL_PATH );
-	return is_string( $path ) && '/llms.txt' === untrailingslashit( $path );
-}
-
-/**
- * Override Rank Math title settings for the llms.txt request only.
- *
- * Keeps sitewide entity/schema settings intact while allowing a site-branded
- * llms.txt heading.
- *
- * @param mixed $value Option value from get_option().
- * @return mixed
- */
-function mcp_rankmath_filter_llms_title_settings( $value ) {
-	if ( ! mcp_rankmath_is_llms_request() || ! is_array( $value ) ) {
-		return $value;
-	}
-
-	$branding                        = mcp_rankmath_get_llms_branding();
-	$value['knowledgegraph_name']    = $branding['name'];
-	$value['organization_description'] = $branding['description'];
-
-	return $value;
-}
-
-add_filter( 'option_rank-math-options-titles', 'mcp_rankmath_filter_llms_title_settings' );
 
 /**
  * Get a Rank Math option as an array.
@@ -631,12 +581,17 @@ function mcp_rankmath_get_schema_status_data(): array {
  * @return array<string,mixed>
  */
 function mcp_rankmath_get_llms_status_data( int $preview_lines = 12 ): array {
-	$general       = mcp_rankmath_get_general_settings();
-	$branding      = mcp_rankmath_get_llms_branding();
-	$rewrite       = mcp_rankmath_get_rewrite_status( 'llms.txt' );
-	$live_preview  = mcp_rankmath_fetch_local_preview( '/llms.txt', $preview_lines );
-	$post_types    = isset( $general['llms_post_types'] ) && is_array( $general['llms_post_types'] ) ? array_values( $general['llms_post_types'] ) : array();
-	$taxonomies    = isset( $general['llms_taxonomies'] ) && is_array( $general['llms_taxonomies'] ) ? array_values( $general['llms_taxonomies'] ) : array();
+	$general           = mcp_rankmath_get_general_settings();
+	$publisher         = mcp_rankmath_get_schema_status_data();
+	$rewrite           = mcp_rankmath_get_rewrite_status( 'llms.txt' );
+	$live_preview      = mcp_rankmath_fetch_local_preview( '/llms.txt', $preview_lines );
+	$post_types        = isset( $general['llms_post_types'] ) && is_array( $general['llms_post_types'] ) ? array_values( $general['llms_post_types'] ) : array();
+	$taxonomies        = isset( $general['llms_taxonomies'] ) && is_array( $general['llms_taxonomies'] ) ? array_values( $general['llms_taxonomies'] ) : array();
+	$header_name       = (string) $publisher['publisher_name'];
+	$header_description = (string) $publisher['organization_description'];
+	if ( '' === $header_description ) {
+		$header_description = (string) get_bloginfo( 'description' );
+	}
 
 	return array(
 		'module_active'      => class_exists( '\\RankMath\\Helper' ) && \RankMath\Helper::is_module_active( 'llms-txt' ),
@@ -646,9 +601,9 @@ function mcp_rankmath_get_llms_status_data( int $preview_lines = 12 ): array {
 		'taxonomies'         => $taxonomies,
 		'limit'              => isset( $general['llms_limit'] ) ? (int) $general['llms_limit'] : 100,
 		'extra_content'      => isset( $general['llms_extra_content'] ) ? (string) $general['llms_extra_content'] : '',
-		'header_name'        => $branding['name'],
-		'header_description' => $branding['description'],
-		'effective_heading'  => $branding['name'] . ': ' . $branding['description'],
+		'header_name'        => $header_name,
+		'header_description' => $header_description,
+		'effective_heading'  => '' !== $header_description ? $header_name . ': ' . $header_description : $header_name,
 		'sitemap_active'     => class_exists( '\\RankMath\\Helper' ) && \RankMath\Helper::is_module_active( 'sitemap' ),
 		'live_preview'       => $live_preview,
 	);

@@ -8,7 +8,7 @@ Rank Math SEO abilities for MCP. Get and update meta descriptions, titles, focus
 [![PHP](https://img.shields.io/badge/PHP-8.0%2B-purple.svg)](https://php.net)
 
 **Tested up to:** 7.0
-**Stable tag:** 1.1.9
+**Stable tag:** 1.1.12
 **License:** GPLv2 or later
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -188,6 +188,9 @@ If you skip base-stack verification and start with add-ons immediately, troubles
 
 ## Changelog
 
+### 1.1.12
+- Fixed: llms.txt now preserves the current WordPress site's own Rank Math title and description instead of applying plugin-owned branding
+
 ### 1.1.11
 - Preserves documented Rank Math percent variables such as `%date%` when sanitizing nested schema values.
 
@@ -223,9 +226,6 @@ If you skip base-stack verification and start with add-ons immediately, troubles
 ### 1.1.0
 - Added: schema status, module management, rewrite inspection, llms status/preview, publisher profile, social profiles, and sitemap status abilities
 - Improved: publisher/schema and llms debugging can now be done without raw option spelunking
-
-### 1.0.11
-- Added: llms.txt-only title override so Rank Math can output `Log In: Everywhere!` without polluting global entity/schema settings
 
 ### 1.0.9
 - Added: `rankmath/refresh-llms-route` to inspect and refresh the Rank Math `llms.txt` rewrite rule after module changes
