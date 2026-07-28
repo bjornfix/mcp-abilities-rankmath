@@ -107,7 +107,7 @@ If you are new to the stack, use this order:
 
 If you skip base-stack verification and start with add-ons immediately, troubleshooting gets harder than it needs to be.
 
-## Abilities (31)
+## Abilities (32)
 
 | Ability | Description |
 |---------|-------------|
@@ -130,6 +130,7 @@ If you skip base-stack verification and start with add-ons immediately, troubles
 | `rankmath/bulk-get-meta` | Retrieve SEO metadata and stored SEO scores for multiple posts with filtering |
 | `rankmath/get-inbound-links` | Report internal inbound links to one target or list linked internal targets |
 | `rankmath/audit-content-seo` | Find content with missing SEO fields, noindex, low scores, missing schema, or weak inbound links |
+| `rankmath/audit-faq-links` | Find Rank Math FAQ blocks with links, invalid question data, or empty items |
 | `rankmath/get-post-schema` | Read Rank Math schema-related post meta |
 | `rankmath/update-post-schema` | Update or delete Rank Math `rank_math_schema_*` post meta |
 | `rankmath/get-primary-term` | Read the Rank Math primary term for a post taxonomy |
