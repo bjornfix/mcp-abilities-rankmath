@@ -267,7 +267,7 @@ final class MCP_RankMath_Devenia_Workflow_Adapter {
 
 		$post_title = trim( wp_strip_all_tags( get_the_title( get_queried_object_id() ) ) );
 		if ( '' === $post_title ) {
-			$post_title = __( 'Blog', 'devenia-workflow' );
+			$post_title = __( 'Blog', 'mcp-abilities-rankmath' );
 		}
 
 		if ( method_exists( 'Devenia_Workflow', 'translated_posts_page_current_page' ) && method_exists( 'Devenia_Workflow', 'translated_posts_page_page_label' ) ) {
@@ -277,7 +277,7 @@ final class MCP_RankMath_Devenia_Workflow_Adapter {
 				$post_title = sprintf(
 					'%1$s - %2$s %3$d',
 					$post_title,
-					'' !== $page_label ? $page_label : __( 'Page', 'devenia-workflow' ),
+					'' !== $page_label ? $page_label : __( 'Page', 'mcp-abilities-rankmath' ),
 					$page
 				);
 			}

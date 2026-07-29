@@ -16,6 +16,7 @@ const checks = [
   [!adapter.includes("array_key_exists( $field, $fields )"), "Rank Math field presence must not pretend to carry semantics erased upstream."],
   [rankMathPlugin.includes("ai_translation_workflow_gutenberg_guardrails") && rankMathPlugin.includes("ai_translation_workflow_semantic_link_count_content"), "Moving the Devenia Adapter must not remove the existing optional translation-workflow compatibility hooks."],
   [!rankMathPlugin.includes("../devenia-workflow"), "The public Rank Math plugin must not require a sibling Workflow source tree."],
+  [!adapter.match(/__\(\s*['"][^'"]+['"]\s*,\s*['"]devenia-workflow['"]\s*\)/), "Moved public strings must use the owning Rank Math text domain."],
 ];
 
 for (const [passed, message] of checks) {
