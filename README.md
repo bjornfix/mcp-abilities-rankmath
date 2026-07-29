@@ -2,13 +2,13 @@
 
 Rank Math SEO abilities for MCP. Get and update meta descriptions, titles, focus keywords, and other SEO settings.
 
-[![Release 1.1.12](https://img.shields.io/badge/release-1.1.12-blue.svg)](https://downloads.devenia.com/mcp-abilities-rankmath.zip)
+[![Release 1.1.13](https://img.shields.io/badge/release-1.1.13-blue.svg)](https://downloads.devenia.com/mcp-abilities-rankmath.zip)
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/gpl-2.0)
 [![WordPress](https://img.shields.io/badge/WordPress-6.9%2B-blue.svg)](https://wordpress.org)
 [![PHP](https://img.shields.io/badge/PHP-8.0%2B-purple.svg)](https://php.net)
 
 **Tested up to:** 7.0
-**Stable tag:** 1.1.12
+**Stable tag:** 1.1.13
 **License:** GPLv2 or later
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -188,6 +188,9 @@ If you skip base-stack verification and start with add-ons immediately, troubles
 ```
 
 ## Changelog
+
+### 1.1.13
+- Adds the optional Devenia Workflow adapter for Rank Math metadata, redirects, sitemap refreshes, and FAQ integrity checks.
 
 ### 1.1.12
 - Fixed: llms.txt now preserves the current WordPress site's own Rank Math title and description instead of applying plugin-owned branding
