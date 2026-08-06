@@ -3,6 +3,12 @@
 import { readFileSync } from "node:fs";
 
 const adapter = readFileSync(new URL("../includes/devenia-workflow-adapter.php", import.meta.url), "utf8");
+
+for (const callback of ["filter_source_rewrite_preview_seo_title", "filter_source_rewrite_preview_seo_description", "filter_staged_preview_breadcrumb_items"]) {
+  if (!adapter.includes(callback)) {
+    throw new Error(`The Rank Math-owned Workflow Adapter must register ${callback}.`);
+  }
+}
 const rankMathPlugin = readFileSync(new URL("../mcp-abilities-rankmath.php", import.meta.url), "utf8");
 
 const checks = [

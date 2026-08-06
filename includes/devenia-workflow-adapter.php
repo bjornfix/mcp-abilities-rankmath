@@ -50,6 +50,9 @@ final class MCP_RankMath_Devenia_Workflow_Adapter {
 		add_filter( 'rank_math/opengraph/facebook/description', array( 'Devenia_Workflow', 'filter_translation_job_preview_seo_description' ), 100 );
 		add_filter( 'rank_math/opengraph/twitter/description', array( 'Devenia_Workflow', 'filter_translation_job_preview_seo_description' ), 100 );
 		add_filter( 'rank_math/frontend/canonical', array( 'Devenia_Workflow', 'filter_translation_job_preview_canonical' ), 100 );
+		add_filter( 'rank_math/frontend/title', array( 'Devenia_Workflow', 'filter_source_rewrite_preview_seo_title' ), 110 );
+		add_filter( 'rank_math/frontend/description', array( 'Devenia_Workflow', 'filter_source_rewrite_preview_seo_description' ), 110 );
+		add_filter( 'rank_math/frontend/breadcrumb/items', array( 'Devenia_Workflow', 'filter_staged_preview_breadcrumb_items' ), 110 );
 		add_action( 'devenia_workflow_translation_flush_sitemap_cache', array( __CLASS__, 'flush_sitemap_cache' ) );
 		add_filter( 'devenia_workflow_translation_title_template_option_name', array( __CLASS__, 'title_template_option_name' ), 10, 2 );
 		add_filter( 'devenia_workflow_translation_canonical_seo_surface', array( __CLASS__, 'canonical_seo_surface' ), 10, 2 );
