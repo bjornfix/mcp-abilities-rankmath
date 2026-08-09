@@ -144,6 +144,28 @@ If you skip base-stack verification and start with add-ons immediately, troubles
 | `rankmath/create-redirection` | Create Rank Math redirections with one or more sources |
 | `rankmath/delete-redirections` | Delete Rank Math redirections by ID |
 
+## Capability Scope
+
+The 32 registered abilities form five reader workflows:
+
+- Global Rank Math settings and modules (10): inspect and update stored options, module state, publisher details, social profiles, schema status, and sitemap status.
+- Routes, rewrites, and llms.txt (4): inspect rewrite and llms.txt state, preview the live file, and refresh its route when needed.
+- Post metadata, schema, and primary terms (6): read and update one editable post's SEO fields, schema records, and primary taxonomy term.
+- Content audits, inbound links, and sitemap discovery (5): inspect editable content in bulk, find weak or missing SEO data and internal links, validate FAQ blocks, and enumerate sitemap URLs.
+- 404 logs and redirections (7): inspect or delete log entries and find, create, list, or delete Rank Math redirections.
+
+## Permission and Mutation Boundaries
+
+- Global settings, routes, logs, and redirections require the WordPress `manage_options` capability.
+- Content operations require `edit_posts` and access to the affected post. Broad content listings require `edit_others_posts` and exclude posts the caller cannot edit.
+- Clearing every 404 log entry requires an explicit `confirm` value of `true`.
+- Deleting schema keys requires an explicit `confirm_delete` value of `true`.
+- When Rank Math SEO or a required Rank Math module is unavailable, the affected operation reports failure and leaves WordPress unchanged.
+
+## Download
+
+[Download MCP Abilities - Rank Math](https://downloads.devenia.com/mcp-abilities-rankmath.zip)
+
 ## Usage Examples
 
 ### Get SEO meta for a page
