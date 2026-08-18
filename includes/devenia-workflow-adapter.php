@@ -54,9 +54,12 @@ final class MCP_RankMath_Devenia_Workflow_Adapter {
 		add_filter( 'rank_math/frontend/description', array( 'Devenia_Workflow', 'filter_source_rewrite_preview_seo_description' ), 110 );
 		add_filter( 'rank_math/frontend/breadcrumb/items', array( 'Devenia_Workflow', 'filter_staged_preview_breadcrumb_items' ), 110 );
 		add_action( 'devenia_workflow_translation_flush_sitemap_cache', array( __CLASS__, 'flush_sitemap_cache' ) );
+		add_filter( 'rank_math/sitemap/exclude_post_type', array( __CLASS__, 'exclude_native_page_sitemap_provider' ), 20, 2 );
+		add_filter( 'rank_math/sitemap/providers', array( __CLASS__, 'register_stable_page_sitemap_provider' ), 20 );
 		add_filter( 'devenia_workflow_translation_title_template_option_name', array( __CLASS__, 'title_template_option_name' ), 10, 2 );
 		add_filter( 'devenia_workflow_translation_canonical_seo_surface', array( __CLASS__, 'canonical_seo_surface' ), 10, 2 );
 		add_filter( 'devenia_workflow_translation_sync_seo_meta', array( __CLASS__, 'sync_seo_meta' ), 10, 4 );
+		add_filter( 'devenia_workflow_source_publication_meta_affects_surface', array( __CLASS__, 'source_publication_meta_affects_surface' ), 10, 3 );
 		add_filter( 'devenia_workflow_translation_seo_meta_state', array( __CLASS__, 'seo_meta_state' ), 10, 2 );
 		add_filter( 'devenia_workflow_translation_route_integrity_issues', array( __CLASS__, 'route_integrity_issues' ), 10, 4 );
 		add_filter( 'devenia_workflow_repair_translation_self_redirects', array( __CLASS__, 'repair_translation_self_redirects' ), 10, 3 );
@@ -398,6 +401,22 @@ final class MCP_RankMath_Devenia_Workflow_Adapter {
 		}
 	}
 
+	/** Replace only Rank Math's unstable page pagination when Workflow is active. */
+	public static function exclude_native_page_sitemap_provider( bool $exclude, string $post_type ): bool {
+		return 'page' === $post_type || $exclude;
+	}
+
+	/** Register the page provider which adds a deterministic ID tie-break. */
+	public static function register_stable_page_sitemap_provider( array $providers ): array {
+		if ( ! class_exists( 'MCP_RankMath_Devenia_Workflow_Page_Sitemap_Provider' ) ) {
+			require_once __DIR__ . '/class-devenia-workflow-page-sitemap-provider.php';
+		}
+		if ( class_exists( 'MCP_RankMath_Devenia_Workflow_Page_Sitemap_Provider' ) ) {
+			$providers[] = new MCP_RankMath_Devenia_Workflow_Page_Sitemap_Provider();
+		}
+		return $providers;
+	}
+
 	/**
 	 * @param array<string,mixed> $data Rank Math JSON-LD data.
 	 * @param mixed               $jsonld Rank Math JSON-LD context object.
@@ -486,6 +505,12 @@ final class MCP_RankMath_Devenia_Workflow_Adapter {
 		$result['updated']  = array_values( array_unique( $updated ) );
 		$result['adapters'] = self::append_adapter( $result['adapters'] ?? array() );
 		return $result;
+	}
+
+	/** Declare only canonical Rank Math SEO fields as source-surface authority. */
+	public static function source_publication_meta_affects_surface( bool $affects, string $meta_key, int $post_id ): bool {
+		unset( $post_id );
+		return $affects || in_array( $meta_key, array( 'rank_math_title', 'rank_math_description', 'rank_math_focus_keyword' ), true );
 	}
 
 	/**

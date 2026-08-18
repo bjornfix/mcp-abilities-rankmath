@@ -36,6 +36,14 @@ try {
 		throw new RuntimeException( $post_id->get_error_message() );
 	}
 	$post_id = (int) $post_id;
+	foreach ( array( 'rank_math_title', 'rank_math_description', 'rank_math_focus_keyword' ) as $meta_key ) {
+		if ( ! MCP_RankMath_Devenia_Workflow_Adapter::source_publication_meta_affects_surface( false, $meta_key, $post_id ) ) {
+			throw new RuntimeException( 'Canonical Rank Math metadata did not declare source-publication ownership: ' . $meta_key );
+		}
+	}
+	if ( MCP_RankMath_Devenia_Workflow_Adapter::source_publication_meta_affects_surface( false, '_canonical_seo_unrelated_fixture', $post_id ) ) {
+		throw new RuntimeException( 'Unrelated metadata entered canonical source-publication authority.' );
+	}
 	update_post_meta( $post_id, 'rank_math_focus_keyword', 'stale-focus' );
 	update_post_meta( $post_id, '_canonical_seo_unrelated_fixture', 'must-survive' );
 
