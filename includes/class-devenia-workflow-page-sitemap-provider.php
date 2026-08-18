@@ -43,38 +43,52 @@ final class MCP_RankMath_Devenia_Workflow_Page_Sitemap_Provider extends \RankMat
 			return parent::get_posts( $post_types, $count, $offset );
 		}
 
-		global $wpdb;
-
-		$join_filter = $this->do_filter( 'sitemap/get_posts/join', '', $post_types );
-		$where_filter = $this->do_filter( 'sitemap/get_posts/where', '', $post_types );
 		$exclude_canonical = $this->do_filter( 'sitemap/exlude_posts_with_canonical_urls', false, array( $post_types ) );
+		$meta_query = array(
+			'relation' => 'OR',
+			array(
+				'key' => 'rank_math_robots',
+				'compare' => 'NOT EXISTS',
+			),
+			array(
+				'key' => 'rank_math_robots',
+				'value' => 'noindex',
+				'compare' => 'NOT LIKE',
+			),
+		);
 		if ( $exclude_canonical ) {
-			$join_filter .= " LEFT JOIN {$wpdb->postmeta} AS pm_canonical ON ( p.ID = pm_canonical.post_id AND pm_canonical.meta_key = 'rank_math_canonical_url' )";
-			$where_filter .= ' AND pm_canonical.meta_value IS NULL';
+			$meta_query = array(
+				'relation' => 'AND',
+				$meta_query,
+				array(
+					'key' => 'rank_math_canonical_url',
+					'compare' => 'NOT EXISTS',
+				),
+			);
 		}
 
 		$posts_page_id = absint( get_option( 'page_for_posts' ) );
-		$sql = "
-			SELECT l.ID, post_title, post_content, post_name, post_parent, post_author, post_modified_gmt, post_date, post_date_gmt, post_type
-			FROM (
-				SELECT DISTINCT p.ID FROM {$wpdb->posts} AS p
-				{$join_filter}
-				LEFT JOIN {$wpdb->postmeta} AS pm ON ( p.ID = pm.post_id AND pm.meta_key = 'rank_math_robots' )
-				WHERE (
-					( pm.meta_key = 'rank_math_robots' AND pm.meta_value NOT LIKE '%noindex%' ) OR
-					pm.post_id IS NULL
-				)
-				AND p.post_type = %s AND p.post_status = 'publish' AND p.post_password = ''
-				AND p.ID != %d
-				{$where_filter}
-				ORDER BY p.post_modified DESC, p.ID DESC LIMIT %d OFFSET %d
-			)
-			o JOIN {$wpdb->posts} l ON l.ID = o.ID
-		";
-
-		$posts = \RankMath\Helpers\DB::get_results(
-			$wpdb->prepare( $sql, 'page', $posts_page_id, absint( $count ), absint( $offset ) )
+		$args = apply_filters(
+			'mcp_rankmath/devenia_workflow/page_sitemap_query_args',
+			array(
+				'post_type' => 'page',
+				'post_status' => 'publish',
+				'has_password' => false,
+				'post__not_in' => $posts_page_id ? array( $posts_page_id ) : array(),
+				'posts_per_page' => max( 1, absint( $count ) ),
+				'offset' => absint( $offset ),
+				'orderby' => array( 'modified' => 'DESC', 'ID' => 'DESC' ),
+				'no_found_rows' => true,
+				'ignore_sticky_posts' => true,
+				'update_post_term_cache' => false,
+				'suppress_filters' => false,
+				'meta_query' => $meta_query,
+			),
+			absint( $count ),
+			absint( $offset )
 		);
+		$query = new WP_Query( is_array( $args ) ? $args : array() );
+		$posts = array_values( array_filter( (array) $query->posts, static fn( $post ): bool => $post instanceof WP_Post ) );
 		$post_ids = array();
 		foreach ( $posts as $post ) {
 			$post->post_status = 'publish';

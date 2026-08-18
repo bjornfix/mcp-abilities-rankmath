@@ -2,13 +2,13 @@
 
 Rank Math SEO abilities for MCP. Get and update meta descriptions, titles, focus keywords, and other SEO settings.
 
-[![Release 1.1.15](https://img.shields.io/badge/release-1.1.15-blue.svg)](https://downloads.devenia.com/mcp-abilities-rankmath.zip)
+[![Release 1.1.16](https://img.shields.io/badge/release-1.1.16-blue.svg)](https://downloads.devenia.com/mcp-abilities-rankmath.zip)
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/gpl-2.0)
 [![WordPress](https://img.shields.io/badge/WordPress-6.9%2B-blue.svg)](https://wordpress.org)
 [![PHP](https://img.shields.io/badge/PHP-8.0%2B-purple.svg)](https://php.net)
 
 **Tested up to:** 7.0
-**Stable tag:** 1.1.15
+**Stable tag:** 1.1.16
 **License:** GPLv2 or later
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -210,6 +210,9 @@ The 32 registered abilities form five reader workflows:
 ```
 
 ## Changelog
+
+### 1.1.16
+- Uses the native WordPress query interface for deterministic Workflow page sitemap slices.
 
 ### 1.1.15
 - Makes Devenia Workflow page sitemap pagination deterministic when many published pages share one modified timestamp.
