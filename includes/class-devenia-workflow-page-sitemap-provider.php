@@ -44,58 +44,55 @@ final class MCP_RankMath_Devenia_Workflow_Page_Sitemap_Provider extends \RankMat
 		}
 
 		$exclude_canonical = $this->do_filter( 'sitemap/exlude_posts_with_canonical_urls', false, array( $post_types ) );
-		$meta_query = array(
-			'relation' => 'OR',
-			array(
-				'key' => 'rank_math_robots',
-				'compare' => 'NOT EXISTS',
-			),
-			array(
-				'key' => 'rank_math_robots',
-				'value' => 'noindex',
-				'compare' => 'NOT LIKE',
-			),
-		);
-		if ( $exclude_canonical ) {
-			$meta_query = array(
-				'relation' => 'AND',
-				$meta_query,
+		$posts_page_id = absint( get_option( 'page_for_posts' ) );
+		$wanted = absint( $offset ) + max( 1, absint( $count ) );
+		$batch_size = max( 1, absint( $count ) );
+		$scan_offset = 0;
+		$eligible = array();
+		while ( count( $eligible ) < $wanted ) {
+			$args = apply_filters(
+				'mcp_rankmath/devenia_workflow/page_sitemap_query_args',
 				array(
-					'key' => 'rank_math_canonical_url',
-					'compare' => 'NOT EXISTS',
+					'post_type' => 'page',
+					'post_status' => 'publish',
+					'has_password' => false,
+					'posts_per_page' => $batch_size,
+					'offset' => $scan_offset,
+					'orderby' => array( 'modified' => 'DESC', 'ID' => 'DESC' ),
+					'no_found_rows' => true,
+					'ignore_sticky_posts' => true,
+					'update_post_term_cache' => false,
+					'suppress_filters' => false,
 				),
+				$batch_size,
+				$scan_offset
 			);
+			$query = new WP_Query( is_array( $args ) ? $args : array() );
+			$batch = array_values( array_filter( (array) $query->posts, static fn( $post ): bool => $post instanceof WP_Post ) );
+			if ( empty( $batch ) ) {
+				break;
+			}
+			$scan_offset += count( $batch );
+			foreach ( $batch as $post ) {
+				$post_id = (int) $post->ID;
+				if ( $post_id === $posts_page_id || ! \RankMath\Sitemap\Sitemap::is_object_indexable( $post_id ) ) {
+					continue;
+				}
+				if ( $exclude_canonical && '' !== (string) \RankMath\Helper::get_post_meta( 'canonical_url', $post_id ) ) {
+					continue;
+				}
+				$eligible[] = $post;
+			}
+			if ( count( $batch ) < $batch_size ) {
+				break;
+			}
 		}
 
-		$posts_page_id = absint( get_option( 'page_for_posts' ) );
-		$args = apply_filters(
-			'mcp_rankmath/devenia_workflow/page_sitemap_query_args',
-			array(
-				'post_type' => 'page',
-				'post_status' => 'publish',
-				'has_password' => false,
-				'post__not_in' => $posts_page_id ? array( $posts_page_id ) : array(),
-				'posts_per_page' => max( 1, absint( $count ) ),
-				'offset' => absint( $offset ),
-				'orderby' => array( 'modified' => 'DESC', 'ID' => 'DESC' ),
-				'no_found_rows' => true,
-				'ignore_sticky_posts' => true,
-				'update_post_term_cache' => false,
-				'suppress_filters' => false,
-				'meta_query' => $meta_query,
-			),
-			absint( $count ),
-			absint( $offset )
-		);
-		$query = new WP_Query( is_array( $args ) ? $args : array() );
-		$posts = array_values( array_filter( (array) $query->posts, static fn( $post ): bool => $post instanceof WP_Post ) );
-		$post_ids = array();
+		$posts = array_slice( $eligible, absint( $offset ), max( 1, absint( $count ) ) );
 		foreach ( $posts as $post ) {
 			$post->post_status = 'publish';
 			$post->filter = 'sample';
-			$post_ids[] = (int) $post->ID;
 		}
-		update_meta_cache( 'post', $post_ids );
 
 		return $posts;
 	}
