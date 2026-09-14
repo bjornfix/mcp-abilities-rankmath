@@ -2,14 +2,14 @@
 
 Turn an SEO review into a set of changes you can check in WordPress. MCP Abilities - Rank Math lets an authenticated agent find missing metadata, inspect internal links, repair approved redirects, and read back the result through 32 WordPress abilities.
 
-[![Release 1.1.19](https://img.shields.io/badge/release-1.1.19-blue.svg)](https://downloads.devenia.com/mcp-abilities-rankmath.zip)
+[![Release 1.1.20](https://img.shields.io/badge/release-1.1.20-blue.svg)](https://downloads.devenia.com/mcp-abilities-rankmath.zip)
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/gpl-2.0.html)
 [![WordPress](https://img.shields.io/badge/WordPress-6.9%2B-blue.svg)](https://wordpress.org/)
 [![PHP](https://img.shields.io/badge/PHP-8.0%2B-purple.svg)](https://www.php.net/)
 
-**Tested up to:** 7.0
+**Tested up to:** 7.1
 
-**Stable tag:** 1.1.19
+**Stable tag:** 1.1.20
 
 **License:** GPLv2 or later
 
@@ -162,7 +162,7 @@ Verify the destination and any existing matching rules before creating a redirec
 
 ## Changelog
 
-### 1.1.19
+### 1.1.20
 - Restrict FAQ and inbound-link reports to posts the caller can edit.
 
 - Reject conflicting robots settings and invalid schema changes before saving any metadata.

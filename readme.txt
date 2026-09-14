@@ -2,9 +2,9 @@
 Contributors: basicus
 Tags: seo, rank math, mcp, api, automation
 Requires at least: 6.9
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.1.19
+Stable tag: 1.1.20
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -104,7 +104,7 @@ This add-on plugin extends [MCP Expose Abilities](https://devenia.com/plugins/mc
 
 == Changelog ==
 
-= 1.1.19 =
+= 1.1.20 =
 * Restrict FAQ and inbound-link reports to posts the caller can edit.
 * Reject conflicting robots settings and invalid schema changes before saving metadata.
 * Preserve Rank Math variables and literal backslashes in SEO text and nested schema values while removing HTML from text fields.
