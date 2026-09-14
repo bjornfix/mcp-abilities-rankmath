@@ -23,7 +23,14 @@ final class MCP_RankMath_Devenia_Workflow_Adapter {
 	 * Register hooks only when Rank Math is available.
 	 */
 	public static function maybe_register_hooks(): void {
-		if ( ! self::is_active() || ! class_exists( 'Devenia_Workflow' ) ) {
+		if ( ! self::is_active() ) {
+			return;
+		}
+
+		add_filter( 'rank_math/sitemap/exclude_post_type', array( __CLASS__, 'exclude_native_page_sitemap_provider' ), 20, 2 );
+		add_filter( 'rank_math/sitemap/providers', array( __CLASS__, 'register_stable_page_sitemap_provider' ), 20 );
+
+		if ( ! class_exists( 'Devenia_Workflow' ) ) {
 			return;
 		}
 
@@ -54,8 +61,6 @@ final class MCP_RankMath_Devenia_Workflow_Adapter {
 		add_filter( 'rank_math/frontend/description', array( 'Devenia_Workflow', 'filter_source_rewrite_preview_seo_description' ), 110 );
 		add_filter( 'rank_math/frontend/breadcrumb/items', array( 'Devenia_Workflow', 'filter_staged_preview_breadcrumb_items' ), 110 );
 		add_action( 'devenia_workflow_translation_flush_sitemap_cache', array( __CLASS__, 'flush_sitemap_cache' ) );
-		add_filter( 'rank_math/sitemap/exclude_post_type', array( __CLASS__, 'exclude_native_page_sitemap_provider' ), 20, 2 );
-		add_filter( 'rank_math/sitemap/providers', array( __CLASS__, 'register_stable_page_sitemap_provider' ), 20 );
 		add_filter( 'devenia_workflow_translation_title_template_option_name', array( __CLASS__, 'title_template_option_name' ), 10, 2 );
 		add_filter( 'devenia_workflow_translation_canonical_seo_surface', array( __CLASS__, 'canonical_seo_surface' ), 10, 2 );
 		add_filter( 'devenia_workflow_translation_sync_seo_meta', array( __CLASS__, 'sync_seo_meta' ), 10, 4 );
@@ -169,10 +174,10 @@ final class MCP_RankMath_Devenia_Workflow_Adapter {
 	 * @param array<int,array<string,mixed>> $blocks Parsed block tree.
 	 */
 	public static function gutenberg_content_safety( array $safety, array $blocks, string $content ): array {
-		unset( $content );
-
 		$summary = isset( $safety['summary'] ) && is_array( $safety['summary'] ) ? $safety['summary'] : array();
-		$summary['rank_math_faq_blocks'] = self::count_faq_blocks( $blocks );
+		$summary['rank_math_faq_blocks'] = false !== strpos( $content, 'rank-math/faq-block' )
+			? self::count_faq_blocks( $blocks )
+			: 0;
 		$safety['summary'] = $summary;
 
 		return $safety;
@@ -401,7 +406,7 @@ final class MCP_RankMath_Devenia_Workflow_Adapter {
 		}
 	}
 
-	/** Replace only Rank Math's unstable page pagination when Workflow is active. */
+	/** Replace only Rank Math's unstable page pagination. */
 	public static function exclude_native_page_sitemap_provider( bool $exclude, string $post_type ): bool {
 		return 'page' === $post_type || $exclude;
 	}
@@ -454,16 +459,26 @@ final class MCP_RankMath_Devenia_Workflow_Adapter {
 	 * @param array<string,mixed>  $context Adapter context.
 	 */
 	public static function sync_seo_meta( array $result, int $post_id, array $fields, array $context ): array {
-		$updated = is_array( $result['updated'] ?? null ) ? $result['updated'] : array();
-		$managed = false;
-		foreach ( array( 'title' => 'rank_math_title', 'description' => 'rank_math_description', 'focus_keyword' => 'rank_math_focus_keyword' ) as $field => $meta_key ) {
+		// Reject the whole field set before performing any operation.
+		foreach ( array( 'title', 'description', 'focus_keyword' ) as $field ) {
 			$instruction = isset( $fields[ $field ] ) && is_array( $fields[ $field ] ) ? $fields[ $field ] : array();
-			$operation   = (string) ( $instruction['operation'] ?? '' );
+			$operation = (string) ( $instruction['operation'] ?? '' );
 			if ( ! in_array( $operation, array( 'set', 'delete', 'preserve' ), true ) ) {
 				$result['success'] = false;
 				$result['message'] = 'Canonical SEO Surface supplied an invalid field operation.';
 				return $result;
 			}
+			if ( 'set' === $operation && '' === trim( (string) ( $instruction['value'] ?? '' ) ) ) {
+				$result['success'] = false;
+				$result['message'] = 'Canonical SEO Surface set operations require a nonempty value.';
+				return $result;
+			}
+		}
+		$updated = is_array( $result['updated'] ?? null ) ? $result['updated'] : array();
+		$managed = false;
+		foreach ( array( 'title' => 'rank_math_title', 'description' => 'rank_math_description', 'focus_keyword' => 'rank_math_focus_keyword' ) as $field => $meta_key ) {
+			$instruction = isset( $fields[ $field ] ) && is_array( $fields[ $field ] ) ? $fields[ $field ] : array();
+			$operation   = (string) ( $instruction['operation'] ?? '' );
 			if ( 'preserve' === $operation ) {
 				continue;
 			}
@@ -475,16 +490,8 @@ final class MCP_RankMath_Devenia_Workflow_Adapter {
 				continue;
 			}
 			$value = trim( (string) ( $instruction['value'] ?? '' ) );
-			if ( '' === $value ) {
-				$result['success'] = false;
-				$result['message'] = 'Canonical SEO Surface set operations require a nonempty value.';
-				return $result;
-			}
-			if ( 'description' === $field ) {
-				update_post_meta( $post_id, $meta_key, sanitize_textarea_field( $value ) );
-			} else {
-				update_post_meta( $post_id, $meta_key, sanitize_text_field( $value ) );
-			}
+			$value = 'focus_keyword' === $field ? sanitize_text_field( $value ) : mcp_rankmath_sanitize_template_text( $value, 'description' === $field );
+			update_post_meta( $post_id, $meta_key, wp_slash( $value ) );
 			$updated[] = $meta_key;
 		}
 

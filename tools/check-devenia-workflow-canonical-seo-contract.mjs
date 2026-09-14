@@ -14,7 +14,7 @@ const rankMathPlugin = readFileSync(new URL("../mcp-abilities-rankmath.php", imp
 
 const checks = [
   [adapter.includes("final class MCP_RankMath_Devenia_Workflow_Adapter"), "The optional Workflow integration must be owned by the Rank Math plugin."],
-  [adapter.includes("! self::is_active() || ! class_exists( 'Devenia_Workflow' )"), "The optional Adapter must remain inert unless both plugins are active."],
+  [adapter.includes("if ( ! self::is_active() )") && adapter.includes("if ( ! class_exists( 'Devenia_Workflow' ) )"), "Rank Math hooks require Rank Math; Workflow hooks additionally require Workflow."],
   [adapter.includes("devenia_workflow_translation_canonical_seo_surface"), "The Adapter must supply stored Rank Math values through Workflow's generic SEO seam."],
   [adapter.includes("devenia_workflow_translation_sync_seo_meta"), "The Adapter must consume Workflow's generic SEO mutation seam."],
   [adapter.includes("rank_math/sitemap/exclude_post_type") && adapter.includes("rank_math/sitemap/providers"), "The Adapter must replace only Rank Math's unstable page sitemap provider."],

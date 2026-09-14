@@ -1,111 +1,83 @@
 # MCP Abilities - Rank Math
 
-Rank Math SEO abilities for MCP. Get and update meta descriptions, titles, focus keywords, and other SEO settings.
+Turn an SEO review into a set of changes you can check in WordPress. MCP Abilities - Rank Math lets an authenticated agent find missing metadata, inspect internal links, repair approved redirects, and read back the result through 32 WordPress abilities.
 
-[![Release 1.1.17](https://img.shields.io/badge/release-1.1.17-blue.svg)](https://downloads.devenia.com/mcp-abilities-rankmath.zip)
-[![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/gpl-2.0)
-[![WordPress](https://img.shields.io/badge/WordPress-6.9%2B-blue.svg)](https://wordpress.org)
-[![PHP](https://img.shields.io/badge/PHP-8.0%2B-purple.svg)](https://php.net)
+[![Release 1.1.19](https://img.shields.io/badge/release-1.1.19-blue.svg)](https://downloads.devenia.com/mcp-abilities-rankmath.zip)
+[![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/gpl-2.0.html)
+[![WordPress](https://img.shields.io/badge/WordPress-6.9%2B-blue.svg)](https://wordpress.org/)
+[![PHP](https://img.shields.io/badge/PHP-8.0%2B-purple.svg)](https://www.php.net/)
 
 **Tested up to:** 7.0
-**Stable tag:** 1.1.17
+
+**Stable tag:** 1.1.19
+
 **License:** GPLv2 or later
-**License URI:** https://www.gnu.org/licenses/gpl-2.0.html
+
+**Tags:** seo, rank math, mcp, api, automation
 
 ## What It Does
 
-Rank Math SEO abilities for MCP. Get and update meta descriptions, titles, focus keywords, and other SEO settings.
+The plugin connects an agent to Rank Math's stored SEO fields, settings, modules, schema records, sitemap output, 404 logs, and redirections. The agent can inspect a problem, make the requested change, and check the stored result without copying values between a chat and the WordPress editor.
 
-This plugin is part of the MCP abilities ecosystem. It gives an MCP-capable agent a focused, authenticated way to work with Rank Math work inside WordPress through MCP.
+## What You Can Build
 
-**Example:** "Handle this WordPress maintenance task directly." - The agent can inspect the site, call the relevant ability, and return the result without making the human click through wp-admin for every step.
+### A focused metadata repair queue
+
+Ask the agent to review service pages for empty SEO titles and descriptions. It can return the affected pages, prepare accurate copy from each page's subject, save approved text, and read it back. An empty custom field is a review signal: Rank Math may already supply a useful default template.
+
+### A redirect review after a site restructure
+
+A service has moved to a new URL, but visitors still request its old address. The agent can inspect 404 logs and existing redirect rules, verify the intended replacement, and create a specific redirect. Check the resulting HTTP route before clearing logs; deleting a log does not repair a URL.
+
+### A publishing check that includes discovery
+
+Ask which pages lack internal inbound links and whether expected URLs appear in the sitemap. Combine that evidence with a content review to decide where a useful link belongs. The add-on reports links found in stored content and navigation menus; it does not edit page copy or crawl every dynamically rendered link.
+
+### A consistent publisher profile
+
+An organisation changes its public contact information. The agent can inspect the current publisher and social settings, update verified details, and check the resulting structured data. Sitemap and llms.txt inspection can support the same maintenance routine when their Rank Math modules are enabled.
 
 ## The Real Workflow
 
-In practice, the human should not have to memorize every ability name.
-
-The normal pattern is:
-
-1. install the base MCP stack
-2. install only the add-ons the site actually needs
-3. let the agent discover the available abilities
-4. give the agent a clear task with boundaries
-5. verify the result in WordPress
-
-The human's job is mostly to describe the goal.
-The agent's job is to figure out the mechanics.
+1. Define the pages or settings in scope and the desired result.
+2. Ask the agent to read current metadata, relevant links, and existing rules.
+3. Review proposed wording or redirect destinations before applying them.
+4. Save the selected changes through the relevant ability.
+5. Read back metadata and inspect rendered pages or HTTP redirects.
 
 ## Why This Feels Different
 
-Most WordPress automation still leaves the repetitive part to the human.
-
-This plugin is different because the agent can act inside the site through a narrow, authenticated ability surface:
-
-- inspect current site state before changing anything
-- run the specific action needed for the task
-- return structured results that are easy to verify
-- keep the workflow inside WordPress instead of a separate checklist
-
-That changes the experience from:
-
-- `Here is what you should do in wp-admin`
-
-to:
-
-- `Tell the agent what needs doing, and let it carry out the work`
+The same task can move from finding an empty field to saving its replacement and showing the stored result. WordPress remains the content system, Rank Math remains the SEO engine, and the agent uses explicit operations that can be inspected individually.
 
 ## Before vs After
 
-### Before
-
-- ask the AI what to do
-- copy the answer into WordPress by hand
-- click through wp-admin for the repetitive bits
-- postpone maintenance because the task is tedious
-
-### After
-
-- tell the agent what needs doing
-- let it inspect the relevant WordPress state
-- let it run the targeted ability
-- verify the result and move on
+| Task | Manual workflow | With the add-on |
+| --- | --- | --- |
+| Review descriptions | Open each editor and collect fields | Retrieve stored fields and filter the review |
+| Repair an old URL | Compare logs and rules in separate screens | Inspect both, then create the chosen rule |
+| Check publisher details | Search through site settings | Read and update the supported profile fields |
 
 ## Who It Is For
 
-This is a good fit for:
+Agencies, editors, and site owners who already use Rank Math and want repeatable maintenance through an authenticated agent. It is useful when a task covers several pages or needs evidence from more than one Rank Math screen.
 
-- agencies managing WordPress sites with AI-assisted maintenance
-- operators who want agents to do real WordPress work instead of producing instructions
-- teams already using MCP Expose Abilities
-- sites where this WordPress area is updated often enough to deserve automation
+## Requirements
 
-It is especially useful when the manual version is repetitive enough that important maintenance gets delayed.
+- WordPress 6.9 or later, with the native Abilities API available.
+- PHP 8.0 or later.
+- [Rank Math SEO](https://wordpress.org/plugins/seo-by-rank-math/), with the modules needed for your task enabled.
+- An MCP connection, such as [MCP Expose Abilities](https://devenia.com/plugins/mcp-expose-abilities/), configured for the WordPress user carrying out the work.
 
 ## Documentation
 
-Start with the main plugin page and base stack documentation:
-
-- [MCP Expose Abilities](https://devenia.com/plugins/mcp-expose-abilities/)
-- [Plugin page](https://devenia.com/plugins/mcp-abilities-rankmath/)
-- [Getting Started](https://github.com/bjornfix/mcp-expose-abilities/wiki/Getting-Started)
-- [Install Order and Dependencies](https://github.com/bjornfix/mcp-expose-abilities/wiki/Install-Order-and-Dependencies)
-
-If you are using an AI agent, the simplest instruction is often just:
-
-- `Read https://github.com/bjornfix/mcp-expose-abilities and figure out the stack before making changes.`
+Read the [plugin page](https://devenia.com/plugins/mcp-abilities-rankmath/) and the [MCP Expose Abilities setup](https://devenia.com/plugins/mcp-expose-abilities/).
 
 ## Start Here
 
-If you are new to the stack, use this order:
-
-1. Install **Abilities API**.
-2. Install **MCP Adapter**.
-3. Install **MCP Expose Abilities**.
-4. Install **MCP Abilities - Rank Math**.
-5. Confirm the new abilities appear in discovery.
-6. Give the agent a clear task that uses this add-on.
-
-If you skip base-stack verification and start with add-ons immediately, troubleshooting gets harder than it needs to be.
+1. Install and activate Rank Math SEO.
+2. Configure and verify your authenticated MCP connection.
+3. Install and activate this add-on.
+4. Discover the `rankmath/` abilities and start with a read operation on one page.
 
 ## Abilities (32)
 
@@ -144,72 +116,62 @@ If you skip base-stack verification and start with add-ons immediately, troubles
 | `rankmath/create-redirection` | Create Rank Math redirections with one or more sources |
 | `rankmath/delete-redirections` | Delete Rank Math redirections by ID |
 
-## Capability Scope
+## Permissions and Limits
 
-The 32 registered abilities form five reader workflows:
+Content reads and writes require `edit_posts`; individual metadata operations also check the affected post. Inbound-link and FAQ reports also restrict post data to content the caller can edit. Administrative settings, modules, routes, logs, and redirect management require `manage_options`.
 
-- Global Rank Math settings and modules (10): inspect and update stored options, module state, publisher details, social profiles, schema status, and sitemap status.
-- Routes, rewrites, and llms.txt (4): inspect rewrite and llms.txt state, preview the live file, and refresh its route when needed.
-- Post metadata, schema, and primary terms (6): read and update one editable post's SEO fields, schema records, and primary taxonomy term.
-- Content audits, inbound links, and sitemap discovery (5): inspect editable content in bulk, find weak or missing SEO data and internal links, validate FAQ blocks, and enumerate sitemap URLs.
-- 404 logs and redirections (7): inspect or delete log entries and find, create, list, or delete Rank Math redirections.
+Deleting schema records requires `confirm_delete: true`. Clearing all 404 logs requires `confirm: true`. These confirmations apply to those operations; they are not a general approval system for every write. Global option writes can replace a complete option value, so read and preserve fields you intend to keep.
 
-## Permission and Mutation Boundaries
+SEO scores are stored Rank Math values, not fresh measurements or search rankings. An audit of stored custom fields does not establish the final rendered title, schema, indexability, or search-engine treatment. Review those outputs separately. The plugin does not supply keyword research, traffic data, an AI model, or a guarantee of indexing, rankings, or AI citations.
 
-- Global settings, routes, logs, and redirections require the WordPress `manage_options` capability.
-- Content operations require `edit_posts` and access to the affected post. Broad content listings require `edit_others_posts` and exclude posts the caller cannot edit.
-- Clearing every 404 log entry requires an explicit `confirm` value of `true`.
-- Deleting schema keys requires an explicit `confirm_delete` value of `true`.
-- When Rank Math SEO or a required Rank Math module is unavailable, the affected operation reports failure and leaves WordPress unchanged.
-
-## Download
-
-[Download MCP Abilities - Rank Math](https://downloads.devenia.com/mcp-abilities-rankmath.zip)
+The optional Devenia Workflow integration coordinates SEO metadata and FAQ handling when that plugin is present. Stable page sitemap ordering and image-attribute compatibility operate with Rank Math independently.
 
 ## Usage Examples
 
-### Get SEO meta for a page
+### Read a page before editing
 
 ```json
-{
-  "ability_name": "rankmath/get-meta",
-  "parameters": {
-    "id": 123
-  }
-}
+{"ability_name":"rankmath/get-meta","parameters":{"id":123}}
 ```
 
-### Update meta description
+### Save a description based on the page's actual offer
 
 ```json
-{
-  "ability_name": "rankmath/update-meta",
-  "parameters": {
-    "id": 123,
-    "description": "Updated meta description with focus keyword included."
-  }
-}
+{"ability_name":"rankmath/update-meta","parameters":{"id":123,"description":"Compare fitted kitchen layouts, materials and installation options. See completed projects and request a design consultation."}}
 ```
 
-### Create a redirection
+### Restore the site's default robots behaviour
 
 ```json
-{
-  "ability_name": "rankmath/create-redirection",
-  "parameters": {
-    "sources": [
-      {
-        "pattern": "old-page",
-        "comparison": "exact"
-      }
-    ],
-    "destination": "https://example.com/new-page/",
-    "header_code": 301
-  }
-}
+{"ability_name":"rankmath/update-meta","parameters":{"id":123,"clear_robots":true}}
 ```
+
+Do not include `robots` in the same request as `clear_robots`.
+
+### Redirect an old service address
+
+```json
+{"ability_name":"rankmath/create-redirection","parameters":{"sources":[{"pattern":"old-service","comparison":"exact"}],"destination":"https://example.com/services/new-service/","header_code":301}}
+```
+
+Verify the destination and any existing matching rules before creating a redirect.
+
+## Installation
+
+[Download MCP Abilities - Rank Math](https://downloads.devenia.com/mcp-abilities-rankmath.zip), upload the ZIP through WordPress **Plugins → Add New → Upload Plugin**, and activate it. Confirm that your MCP client can discover and execute an authorised read operation.
 
 ## Changelog
+
+### 1.1.19
+- Restrict FAQ and inbound-link reports to posts the caller can edit.
+
+- Reject conflicting robots settings and invalid schema changes before saving any metadata.
+- Preserve Rank Math variables and literal backslashes in SEO text and nested schema values while removing HTML from text fields.
+- Add an explicit way to restore the default robots behaviour.
+- Keep stable page sitemap ordering available without Devenia Workflow and skip FAQ counting for content without FAQ blocks.
+
+### 1.1.18
+- Preserves HTML5 characters in existing image attributes when Rank Math adds missing alternative text or titles.
 
 ### 1.1.17
 - Filters page sitemap eligibility after bounded native queries while preserving deterministic pagination.
@@ -301,11 +263,11 @@ The 32 registered abilities form five reader workflows:
 
 ## Contributing
 
-PRs welcome. Keep changes focused on the plugin's WordPress ability surface and preserve authenticated, explicit workflows.
+Contributions should preserve native WordPress permissions and Rank Math behaviour. Include a focused example showing the changed public operation and its expected result.
 
 ## License
 
-GPL-2.0+
+GPLv2 or later. See the [GNU General Public License](https://www.gnu.org/licenses/gpl-2.0.html).
 
 ## Author
 
@@ -313,18 +275,6 @@ GPL-2.0+
 
 ## Links
 
-- [Plugin Page](https://devenia.com/plugins/mcp-expose-abilities/#add-ons)
+- [Plugin page](https://devenia.com/plugins/mcp-abilities-rankmath/)
+- [Download](https://downloads.devenia.com/mcp-abilities-rankmath.zip)
 - [MCP Expose Abilities](https://devenia.com/plugins/mcp-expose-abilities/)
-- [GitHub Releases](https://github.com/bjornfix/mcp-abilities-rankmath/releases)
-
-## Star and Share
-
-If this plugin saves you time or makes WordPress maintenance easier to verify, please:
-
-- star the repo
-- share it with people running WordPress sites
-- point them to the main plugin page so they can see what the ecosystem can actually do
-
-Why do it?
-
-Because agent-friendly open WordPress tooling helps more of the boring but important work get done.

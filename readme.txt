@@ -4,7 +4,7 @@ Tags: seo, rank math, mcp, api, automation
 Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.1.17
+Stable tag: 1.1.19
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -16,7 +16,7 @@ This add-on plugin extends [MCP Expose Abilities](https://devenia.com/plugins/mc
 
 = Requirements =
 
-* [MCP Expose Abilities](https://github.com/bjornfix/mcp-expose-abilities) (core plugin)
+* [MCP Expose Abilities](https://devenia.com/plugins/mcp-expose-abilities/) (core plugin)
 * [Rank Math SEO](https://wordpress.org/plugins/seo-by-rank-math/) plugin
 
 = Abilities Included =
@@ -96,13 +96,23 @@ This add-on plugin extends [MCP Expose Abilities](https://devenia.com/plugins/mc
 
 == Installation ==
 
-1. Install and activate [MCP Expose Abilities](https://github.com/bjornfix/mcp-expose-abilities)
+1. Install and activate [MCP Expose Abilities](https://devenia.com/plugins/mcp-expose-abilities/)
 2. Install and activate [Rank Math SEO](https://wordpress.org/plugins/seo-by-rank-math/)
 3. Upload `mcp-abilities-rankmath` to `/wp-content/plugins/`
 4. Activate through the 'Plugins' menu
 5. The abilities are now available via the MCP endpoint
 
 == Changelog ==
+
+= 1.1.19 =
+* Restrict FAQ and inbound-link reports to posts the caller can edit.
+* Reject conflicting robots settings and invalid schema changes before saving metadata.
+* Preserve Rank Math variables and literal backslashes in SEO text and nested schema values while removing HTML from text fields.
+* Add clear_robots to restore the default robots behaviour.
+* Keep stable page sitemap ordering available without Devenia Workflow and skip FAQ counting for content without FAQ blocks.
+
+= 1.1.18 =
+* Preserves HTML5 characters in existing image attributes when Rank Math adds missing alternative text or titles.
 
 = 1.1.17 =
 * Filters page sitemap eligibility after bounded native queries while preserving deterministic pagination.

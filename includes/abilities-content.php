@@ -118,7 +118,7 @@ function mcp_rankmath_register_content_abilities(): void {
 		'rankmath/update-meta',
 		array(
 			'label'               => 'Update Rank Math SEO Meta',
-			'description'         => 'Update Rank Math SEO meta data for a post or page. Can update title, description, focus keyword, robots, canonical URL, and content flags. Also accepts title/description/keyword aliases for convenience.',
+			'description'         => 'Update Rank Math SEO meta data for a post or page. Can update or clear title, description, focus keyword, robots, canonical URL, and content flags. Also accepts title/description/keyword aliases for convenience.',
 			'category'            => 'site',
 			'input_schema'        => array(
 				'type'                 => 'object',
@@ -156,6 +156,10 @@ function mcp_rankmath_register_content_abilities(): void {
 						'type'        => 'array',
 						'items'       => array( 'type' => 'string' ),
 						'description' => 'Robot meta tags: index, noindex, follow, nofollow, etc.',
+					),
+					'clear_robots'    => array(
+						'type'        => 'boolean',
+						'description' => 'Remove the per-post robots override and restore the site-level robots behavior.',
 					),
 					'canonical_url'   => array(
 						'type'        => 'string',
@@ -196,6 +200,15 @@ function mcp_rankmath_register_content_abilities(): void {
 					return $result;
 				}
 
+				// Clear or update robots. These operations are mutually exclusive so a
+				// caller cannot silently replace an explicit clear with a new override.
+				if ( ! empty( $input['clear_robots'] ) && array_key_exists( 'robots', $input ) ) {
+					return array(
+						'success' => false,
+						'message' => 'clear_robots and robots cannot be supplied together.',
+					);
+				}
+
 				$updated         = array();
 				$seo_title_input = $input['seo_title'] ?? $input['title'] ?? null;
 				$seo_desc_input  = $input['seo_description'] ?? $input['description'] ?? null;
@@ -203,24 +216,26 @@ function mcp_rankmath_register_content_abilities(): void {
 
 				// Update SEO title.
 				if ( null !== $seo_title_input ) {
-					update_post_meta( $post_id, 'rank_math_title', sanitize_text_field( $seo_title_input ) );
+					update_post_meta( $post_id, 'rank_math_title', wp_slash( mcp_rankmath_sanitize_template_text( $seo_title_input, false ) ) );
 					$updated[] = 'seo_title';
 				}
 
 				// Update SEO description.
 				if ( null !== $seo_desc_input ) {
-					update_post_meta( $post_id, 'rank_math_description', sanitize_textarea_field( $seo_desc_input ) );
+					update_post_meta( $post_id, 'rank_math_description', wp_slash( mcp_rankmath_sanitize_template_text( $seo_desc_input ) ) );
 					$updated[] = 'seo_description';
 				}
 
 				// Update focus keyword.
 				if ( null !== $focus_input ) {
-					update_post_meta( $post_id, 'rank_math_focus_keyword', sanitize_text_field( $focus_input ) );
+					update_post_meta( $post_id, 'rank_math_focus_keyword', wp_slash( sanitize_text_field( $focus_input ) ) );
 					$updated[] = 'focus_keyword';
 				}
 
-				// Update robots.
-				if ( isset( $input['robots'] ) && is_array( $input['robots'] ) ) {
+				if ( ! empty( $input['clear_robots'] ) ) {
+					delete_post_meta( $post_id, 'rank_math_robots' );
+					$updated[] = 'robots';
+				} elseif ( isset( $input['robots'] ) && is_array( $input['robots'] ) ) {
 					$allowed_robots = array( 'index', 'noindex', 'follow', 'nofollow', 'noarchive', 'nosnippet', 'noimageindex' );
 					$robots = array_filter( $input['robots'], function( $r ) use ( $allowed_robots ) {
 						return in_array( $r, $allowed_robots, true );
@@ -793,32 +808,35 @@ function mcp_rankmath_register_content_abilities(): void {
 					return $result;
 				}
 
-				$updated = array();
-				$deleted = array();
+				$schemas = isset( $input['schemas'] ) && is_array( $input['schemas'] ) ? $input['schemas'] : array();
+				$delete_keys = isset( $input['delete_keys'] ) && is_array( $input['delete_keys'] ) ? $input['delete_keys'] : array();
 
-				if ( isset( $input['schemas'] ) && is_array( $input['schemas'] ) ) {
-					foreach ( $input['schemas'] as $key => $value ) {
-						$key = trim( (string) $key );
-						if ( ! mcp_rankmath_is_schema_meta_key( $key ) ) {
-							return array( 'success' => false, 'message' => 'Schema meta key must match rank_math_schema_* and contain only letters, numbers, underscores, or hyphens.' );
-						}
-						update_post_meta( $post_id, $key, mcp_rankmath_sanitize_schema_value( $value ) );
-						$updated[] = $key;
+				// Validate the complete request before changing any metadata.
+				foreach ( array_keys( $schemas ) as $key ) {
+					if ( ! mcp_rankmath_is_schema_meta_key( trim( (string) $key ) ) ) {
+						return array( 'success' => false, 'message' => 'Schema meta key must match rank_math_schema_* and contain only letters, numbers, underscores, or hyphens.' );
+					}
+				}
+				if ( ! empty( $delete_keys ) && empty( $input['confirm_delete'] ) ) {
+					return array( 'success' => false, 'message' => 'confirm_delete must be true when deleting schema keys.' );
+				}
+				foreach ( $delete_keys as $key ) {
+					if ( ! mcp_rankmath_is_schema_meta_key( trim( (string) $key ) ) ) {
+						return array( 'success' => false, 'message' => 'Only valid rank_math_schema_* keys can be deleted.' );
 					}
 				}
 
-				if ( isset( $input['delete_keys'] ) && is_array( $input['delete_keys'] ) ) {
-					if ( empty( $input['confirm_delete'] ) ) {
-						return array( 'success' => false, 'message' => 'confirm_delete must be true when deleting schema keys.' );
-					}
-					foreach ( $input['delete_keys'] as $key ) {
-						$key = trim( (string) $key );
-						if ( ! mcp_rankmath_is_schema_meta_key( $key ) ) {
-							return array( 'success' => false, 'message' => 'Only valid rank_math_schema_* keys can be deleted.' );
-						}
-						delete_post_meta( $post_id, $key );
-						$deleted[] = $key;
-					}
+				$updated = array();
+				$deleted = array();
+				foreach ( $schemas as $key => $value ) {
+					$key = trim( (string) $key );
+					update_post_meta( $post_id, $key, wp_slash( mcp_rankmath_sanitize_schema_value( $value ) ) );
+					$updated[] = $key;
+				}
+				foreach ( $delete_keys as $key ) {
+					$key = trim( (string) $key );
+					delete_post_meta( $post_id, $key );
+					$deleted[] = $key;
 				}
 
 				if ( empty( $updated ) && empty( $deleted ) ) {
@@ -1160,11 +1178,13 @@ function mcp_rankmath_audit_faq_links( array $input = array() ): array {
 	);
 
 	$findings = array();
+	$scanned_count = 0;
 	foreach ( $query->posts as $post_id ) {
 		$post = get_post( (int) $post_id );
-		if ( ! $post instanceof WP_Post ) {
+		if ( ! $post instanceof WP_Post || ! current_user_can( 'edit_post', $post->ID ) ) {
 			continue;
 		}
+		++$scanned_count;
 		foreach ( mcp_rankmath_faq_integrity_findings_for_content( (string) $post->post_content ) as $finding ) {
 			$finding['post_id']     = (int) $post->ID;
 			$finding['post_type']   = (string) $post->post_type;
@@ -1177,7 +1197,7 @@ function mcp_rankmath_audit_faq_links( array $input = array() ): array {
 
 	return array(
 		'success'       => empty( $findings ),
-		'scanned_count' => count( $query->posts ),
+		'scanned_count' => $scanned_count,
 		'total_matches' => count( $findings ),
 		'limit'         => $limit,
 		'findings'      => $findings,

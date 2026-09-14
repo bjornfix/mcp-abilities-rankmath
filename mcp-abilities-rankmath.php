@@ -1,9 +1,9 @@
 <?php
 /**
  * Plugin Name: MCP Abilities - Rank Math
- * Plugin URI: https://github.com/bjornfix/mcp-abilities-rankmath
+ * Plugin URI: https://devenia.com/plugins/mcp-abilities-rankmath/
  * Description: Rank Math SEO abilities for MCP. Get and update meta descriptions, titles, focus keywords, and other SEO settings.
- * Version: 1.1.17
+ * Version: 1.1.19
  * Author: basicus
  * Author URI: https://profiles.wordpress.org/basicus/
  * License: GPL-2.0+
@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 function mcp_rankmath_check_dependencies(): bool {
 	if ( ! function_exists( 'wp_register_ability' ) ) {
 		add_action( 'admin_notices', function () {
-			echo '<div class="notice notice-error"><p><strong>MCP Abilities - Rank Math</strong> requires the <a href="https://github.com/WordPress/abilities-api">Abilities API</a> plugin to be installed and activated.</p></div>';
+			echo '<div class="notice notice-error"><p><strong>MCP Abilities - Rank Math</strong> requires the WordPress Abilities API. Use WordPress 6.9 or later with the API available.</p></div>';
 		} );
 		return false;
 	}
@@ -803,27 +803,28 @@ function mcp_rankmath_sanitize_schema_value( $value ) {
 			return mcp_rankmath_sanitize_schema_value( $decoded );
 		}
 
-		return mcp_rankmath_sanitize_schema_string( $value );
+		return mcp_rankmath_sanitize_template_text( $value );
 	}
 
 	return '';
 }
 
 /**
- * Sanitize one schema string while preserving documented Rank Math variables.
+ * Sanitize one metadata string while preserving documented Rank Math variables.
  *
  * WordPress text sanitizers remove percent-encoded octets. That corrupts
  * variables such as %date% because "%da" is interpreted as an encoded byte.
  * Protect complete Rank Math variable tokens before sanitizing and restore
  * only the exact tokens that were present in the input.
  *
- * @param string $value Schema string.
+ * @param string $value Metadata string.
+ * @param bool $keep_newlines Whether to preserve line breaks.
  * @return string
  */
-function mcp_rankmath_sanitize_schema_string( string $value ): string {
+function mcp_rankmath_sanitize_template_text( string $value, bool $keep_newlines = true ): string {
 	$variables = array();
 	$protected = preg_replace_callback(
-		'/%[A-Za-z][^%\r\n]*%/',
+		'/%[A-Za-z][^%<>\r\n]*%/',
 		static function ( array $matches ) use ( &$variables ): string {
 			$placeholder               = '__MCP_RANKMATH_SCHEMA_VARIABLE_' . count( $variables ) . '__';
 			$variables[ $placeholder ] = $matches[0];
@@ -836,7 +837,7 @@ function mcp_rankmath_sanitize_schema_string( string $value ): string {
 		return '';
 	}
 
-	$sanitized = sanitize_textarea_field( $protected );
+	$sanitized = $keep_newlines ? sanitize_textarea_field( $protected ) : sanitize_text_field( $protected );
 	return strtr( $sanitized, $variables );
 }
 
@@ -1125,6 +1126,9 @@ function mcp_rankmath_build_inbound_link_graph( array $input ): array {
 		if ( ! $target_post ) {
 			return array( 'success' => false, 'message' => 'Target post not found.' );
 		}
+		if ( ! current_user_can( 'edit_post', $target_post_id ) ) {
+			return array( 'success' => false, 'message' => 'You do not have permission to access this post.' );
+		}
 		$target_path = mcp_rankmath_normalize_internal_link_path( get_permalink( $target_post_id ) );
 		if ( '' !== $target_path ) {
 			$target_paths[] = $target_path;
@@ -1154,6 +1158,9 @@ function mcp_rankmath_build_inbound_link_graph( array $input ): array {
 		);
 
 		foreach ( $target_query->posts as $post_id ) {
+			if ( ! current_user_can( 'edit_post', (int) $post_id ) ) {
+				continue;
+			}
 			$path = mcp_rankmath_normalize_internal_link_path( get_permalink( (int) $post_id ) );
 			if ( '' !== $path ) {
 				$all_target_paths[ $path ] = (int) $post_id;
@@ -1187,6 +1194,9 @@ function mcp_rankmath_build_inbound_link_graph( array $input ): array {
 	$scanned_sources = 0;
 	foreach ( $source_query->posts as $source_id ) {
 		$source_id = (int) $source_id;
+		if ( ! current_user_can( 'edit_post', $source_id ) ) {
+			continue;
+		}
 		$content   = (string) get_post_field( 'post_content', $source_id );
 		$paths     = mcp_rankmath_extract_internal_link_paths( $content );
 		if ( empty( $paths ) ) {
@@ -1317,6 +1327,9 @@ function mcp_rankmath_get_inbound_counts_for_posts( array $post_ids, array $inpu
 	$counts          = array();
 
 	foreach ( $post_ids as $post_id ) {
+		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+			continue;
+		}
 		$path = mcp_rankmath_normalize_internal_link_path( get_permalink( $post_id ) );
 		if ( '' === $path ) {
 			continue;
@@ -1343,6 +1356,9 @@ function mcp_rankmath_get_inbound_counts_for_posts( array $post_ids, array $inpu
 
 	foreach ( $source_query->posts as $source_id ) {
 		$source_id = (int) $source_id;
+		if ( ! current_user_can( 'edit_post', $source_id ) ) {
+			continue;
+		}
 		$content   = (string) get_post_field( 'post_content', $source_id );
 		foreach ( mcp_rankmath_extract_internal_link_paths( $content ) as $path ) {
 			if ( ! isset( $target_by_path[ $path ] ) ) {
@@ -1380,6 +1396,7 @@ require_once __DIR__ . '/includes/abilities-site.php';
 require_once __DIR__ . '/includes/abilities-content.php';
 require_once __DIR__ . '/includes/abilities-logs-redirections.php';
 require_once __DIR__ . '/includes/devenia-workflow-adapter.php';
+require_once __DIR__ . '/includes/image-attribute-compatibility.php';
 
 /** Register optional hooks for compatible translation workflows. */
 function mcp_rankmath_register_integration_hooks(): void {
