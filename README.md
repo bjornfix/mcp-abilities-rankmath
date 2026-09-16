@@ -2,14 +2,14 @@
 
 Turn an SEO review into a set of changes you can check in WordPress. MCP Abilities - Rank Math lets an authenticated agent find missing metadata, inspect internal links, repair approved redirects, and read back the result through 32 WordPress abilities.
 
-[![Release 1.1.20](https://img.shields.io/badge/release-1.1.20-blue.svg)](https://downloads.devenia.com/mcp-abilities-rankmath.zip)
+[![Release 1.1.21](https://img.shields.io/badge/release-1.1.21-blue.svg)](https://downloads.devenia.com/mcp-abilities-rankmath.zip)
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/gpl-2.0.html)
 [![WordPress](https://img.shields.io/badge/WordPress-6.9%2B-blue.svg)](https://wordpress.org/)
 [![PHP](https://img.shields.io/badge/PHP-8.0%2B-purple.svg)](https://www.php.net/)
 
 **Tested up to:** 7.1
 
-**Stable tag:** 1.1.20
+**Stable tag:** 1.1.21
 
 **License:** GPLv2 or later
 
@@ -158,9 +158,17 @@ Verify the destination and any existing matching rules before creating a redirec
 
 ## Installation
 
+
+For update notifications in WordPress, install [Devenia MCP Updater](https://downloads.devenia.com/devenia-mcp-updater.zip). The updater is optional. You choose which plugins update automatically through WordPress.
+
 [Download MCP Abilities - Rank Math](https://downloads.devenia.com/mcp-abilities-rankmath.zip), upload the ZIP through WordPress **Plugins → Add New → Upload Plugin**, and activate it. Confirm that your MCP client can discover and execute an authorised read operation.
 
 ## Changelog
+
+
+### 1.1.21
+
+Add one dismissible Plugins-screen reminder when Devenia MCP Updater is missing or inactive, with persistent install or activate links. Automatic updates remain your choice in WordPress.
 
 ### 1.1.20
 - Restrict FAQ and inbound-link reports to posts the caller can edit.

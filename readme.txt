@@ -4,7 +4,7 @@ Tags: seo, rank math, mcp, api, automation
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.1.20
+Stable tag: 1.1.21
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -96,6 +96,8 @@ This add-on plugin extends [MCP Expose Abilities](https://devenia.com/plugins/mc
 
 == Installation ==
 
+For update notifications in WordPress, install [Devenia MCP Updater](https://downloads.devenia.com/devenia-mcp-updater.zip). The updater is optional. You choose which plugins update automatically through WordPress.
+
 1. Install and activate [MCP Expose Abilities](https://devenia.com/plugins/mcp-expose-abilities/)
 2. Install and activate [Rank Math SEO](https://wordpress.org/plugins/seo-by-rank-math/)
 3. Upload `mcp-abilities-rankmath` to `/wp-content/plugins/`
@@ -103,6 +105,9 @@ This add-on plugin extends [MCP Expose Abilities](https://devenia.com/plugins/mc
 5. The abilities are now available via the MCP endpoint
 
 == Changelog ==
+
+= 1.1.21 =
+* Add one dismissible Plugins-screen reminder when Devenia MCP Updater is missing or inactive, with persistent install or activate links. Automatic updates remain your choice in WordPress.
 
 = 1.1.20 =
 * Restrict FAQ and inbound-link reports to posts the caller can edit.
