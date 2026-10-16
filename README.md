@@ -1,15 +1,15 @@
 # MCP Abilities - Rank Math
 
-Turn an SEO review into a set of changes you can check in WordPress. MCP Abilities - Rank Math lets an authenticated agent find missing metadata, inspect internal links, repair approved redirects, and read back the result through 32 WordPress abilities.
+Turn an SEO review into a set of changes you can check in WordPress. MCP Abilities - Rank Math lets an authenticated agent find missing metadata, inspect internal links, repair approved redirects, and read back the result through 34 WordPress abilities.
 
-[![Release 1.1.21](https://img.shields.io/badge/release-1.1.21-blue.svg)](https://downloads.devenia.com/mcp-abilities-rankmath.zip)
+[![Release 1.1.22](https://img.shields.io/badge/release-1.1.22-blue.svg)](https://downloads.devenia.com/mcp-abilities-rankmath.zip)
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/gpl-2.0.html)
 [![WordPress](https://img.shields.io/badge/WordPress-6.9%2B-blue.svg)](https://wordpress.org/)
 [![PHP](https://img.shields.io/badge/PHP-8.0%2B-purple.svg)](https://www.php.net/)
 
 **Tested up to:** 7.1
 
-**Stable tag:** 1.1.21
+**Stable tag:** 1.1.22
 
 **License:** GPLv2 or later
 
@@ -79,10 +79,12 @@ Read the [plugin page](https://devenia.com/plugins/mcp-abilities-rankmath/) and 
 3. Install and activate this add-on.
 4. Discover the `rankmath/` abilities and start with a read operation on one page.
 
-## Abilities (32)
+## Abilities (34)
 
 | Ability | Description |
 |---------|-------------|
+| `rankmath/get-search-title-translation` | Read the registered public search-title template and one native WPML target |
+| `rankmath/update-search-title-translation` | Preview or complete that translation with fresh hashes and preserved placeholders |
 | `rankmath/list-options` | List Rank Math option names stored in wp_options |
 | `rankmath/get-options` | Get Rank Math option values by name |
 | `rankmath/update-options` | Update Rank Math option values by name |
@@ -163,8 +165,16 @@ For update notifications in WordPress, install [Devenia MCP Updater](https://dow
 
 [Download MCP Abilities - Rank Math](https://downloads.devenia.com/mcp-abilities-rankmath.zip), upload the ZIP through WordPress **Plugins → Add New → Upload Plugin**, and activate it. Confirm that your MCP client can discover and execute an authorised read operation.
 
+## Search title translations
+
+For a multilingual site with WPML String Translation, read `rankmath/get-search-title-translation` with `{"target_language":"en"}`. Translate only the literal words and keep every Rank Math placeholder unchanged. Preview with `rankmath/update-search-title-translation`, then confirm with the returned source and target hashes. The operation uses the registered native public search-title string, preserves the source setting, and refuses active translation jobs. It requires native WPML translation permission and WordPress settings permission. It does not expose arbitrary admin strings or register missing strings. Check the resulting search page after saving.
+
 ## Changelog
 
+
+### 1.1.22
+
+Translate the registered public search-title template through native WPML with preview, stale-value checks, unchanged placeholders and preserved source settings.
 
 ### 1.1.21
 

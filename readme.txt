@@ -4,7 +4,7 @@ Tags: seo, rank math, mcp, api, automation
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.1.21
+Stable tag: 1.1.22
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -20,6 +20,10 @@ This add-on plugin extends [MCP Expose Abilities](https://devenia.com/plugins/mc
 * [Rank Math SEO](https://wordpress.org/plugins/seo-by-rank-math/) plugin
 
 = Abilities Included =
+
+**rankmath/get-search-title-translation** - Read only the registered public Rank Math search-title source and one active secondary-language WPML translation.
+
+**rankmath/update-search-title-translation** - Preview or complete that native translation with fresh source/target hashes and preserved placeholders. Requires native WPML translation and WordPress settings permissions; does not change source settings or expose arbitrary admin strings.
 
 **rankmath/list-options** - List Rank Math option names stored in wp_options.
 
@@ -105,6 +109,9 @@ For update notifications in WordPress, install [Devenia MCP Updater](https://dow
 5. The abilities are now available via the MCP endpoint
 
 == Changelog ==
+
+= 1.1.22 =
+* Translate the registered public search-title template through native WPML with preview, stale-value checks, unchanged placeholders and preserved source settings.
 
 = 1.1.21 =
 * Add one dismissible Plugins-screen reminder when Devenia MCP Updater is missing or inactive, with persistent install or activate links. Automatic updates remain your choice in WordPress.
