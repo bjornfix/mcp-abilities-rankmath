@@ -2,14 +2,14 @@
 
 Turn an SEO review into a set of changes you can check in WordPress. MCP Abilities - Rank Math lets an authenticated agent find missing metadata, inspect internal links, repair approved redirects, and read back the result through 34 WordPress abilities.
 
-[![Release 1.1.25](https://img.shields.io/badge/release-1.1.25-blue.svg)](https://downloads.devenia.com/mcp-abilities-rankmath.zip)
+[![Release 1.1.26](https://img.shields.io/badge/release-1.1.26-blue.svg)](https://downloads.devenia.com/mcp-abilities-rankmath.zip)
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/gpl-2.0.html)
 [![WordPress](https://img.shields.io/badge/WordPress-6.9%2B-blue.svg)](https://wordpress.org/)
 [![PHP](https://img.shields.io/badge/PHP-8.0%2B-purple.svg)](https://www.php.net/)
 
 **Tested up to:** 7.1
 
-**Stable tag:** 1.1.25
+**Stable tag:** 1.1.26
 
 **License:** GPLv2 or later
 
@@ -167,10 +167,14 @@ For update notifications in WordPress, install [Devenia MCP Updater](https://dow
 
 ## Search title translations
 
-For a multilingual site with WPML String Translation, read `rankmath/get-search-title-translation` with `{"target_language":"en"}`. Translate only the literal words and keep every Rank Math placeholder unchanged. Preview with `rankmath/update-search-title-translation`, then confirm with the returned source and target hashes. The operation uses the registered native public search-title string, preserves the source setting, and refuses active translation jobs. It requires native WPML translation permission and WordPress settings permission. It does not expose arbitrary admin strings. If this fixed public source is missing, preview first, then explicitly set `register_if_missing: true` with confirmation to register only the current source through native WPML. A conflicting existing string is refused. Check the resulting search page after saving.
+For a multilingual site with WPML String Translation, read `rankmath/get-search-title-translation` with `{"target_language":"en"}`. Translate only the literal words and keep every Rank Math placeholder unchanged. Preview with `rankmath/update-search-title-translation`, then confirm with the returned source and target hashes. The operation uses the registered native public search-title string, preserves the source setting, and refuses active translation jobs. It requires native WPML translation permission and WordPress settings permission. It does not expose arbitrary admin strings. If this fixed public source is missing, preview first, then explicitly set `register_if_missing: true` with confirmation to register only the current source through native WPML. A conflicting source value is refused. When only the source language is wrong and the unchanged source text is labeled as the requested target language, preview with `align_source_language: true`, then confirm with fresh hashes to correct only that native language label before translation. Active jobs are preserved. Check the resulting search page after saving.
 
 ## Changelog
 
+
+### 1.1.26
+
+Correct a mislabeled public search-title source language through native WPML only after explicit preview and fresh hashes. The current source text and Rank Math settings remain unchanged; active jobs and other strings are preserved.
 
 ### 1.1.25
 

@@ -25,6 +25,7 @@ function mcp_rankmath_search_title_translation_state( string $target_language ):
 	$registered = $string->exists();
 	$target = null;
 	$default_translation = null;
+	$has_active_job = false;
 	$id = 0;
 	$native_source = null;
 	if ( $registered ) {
@@ -36,6 +37,7 @@ function mcp_rankmath_search_title_translation_state( string $target_language ):
 		$native_source = array( 'id' => $id, 'language' => (string) $string->get_language(), 'value' => $native_value );
 		foreach ( $string->get_translations() as $translation ) {
 			$translation = (array) $translation;
+			if ( defined( 'ICL_TM_WAITING_FOR_TRANSLATOR' ) && defined( 'ICL_TM_IN_PROGRESS' ) && in_array( (int) ( $translation['status'] ?? 0 ), array( ICL_TM_WAITING_FOR_TRANSLATOR, ICL_TM_IN_PROGRESS ), true ) ) { $has_active_job = true; }
 			$selected = array( 'value' => (string) ( $translation['value'] ?? '' ), 'status' => (int) ( $translation['status'] ?? 0 ) );
 			if ( ( $translation['language'] ?? '' ) === $target_language ) { $target = $selected; }
 			if ( ( $translation['language'] ?? '' ) === $source_language ) { $default_translation = $selected; }
@@ -44,7 +46,7 @@ function mcp_rankmath_search_title_translation_state( string $target_language ):
 	$source = array( 'id' => $id, 'language' => $source_language, 'value' => $value );
 	$conflict = $registered && ( $native_source['language'] !== $source_language || $native_source['value'] !== $value );
 	return array( 'registered' => $registered, 'source' => $source,
-		'registered_source' => $native_source, 'source_conflict' => $conflict,
+		'registered_source' => $native_source, 'source_conflict' => $conflict, 'has_active_native_job' => $has_active_job,
 		'default_language_translation' => $default_translation,
 		'target_is_registered_source' => $registered && $native_source['language'] === $target_language,
 		'source_hash' => hash( 'sha256', (string) wp_json_encode( array( $source, $native_source ) ) ),
@@ -62,7 +64,7 @@ function mcp_rankmath_get_search_title_translation( array $input = array() ) {
 function mcp_rankmath_update_search_title_translation( array $input = array() ) {
 	try {
 		$before = mcp_rankmath_search_title_translation_state( (string) ( $input['target_language'] ?? '' ) );
-		if ( $before['source_conflict'] ) { return new WP_Error( 'rankmath_search_title_source_conflict', 'Preserve the existing registered public source and review the selected native registration before writing a translation.' ); }
+		if ( $before['source_conflict'] && ( true !== ( $input['align_source_language'] ?? false ) || ! $before['target_is_registered_source'] || $before['registered_source']['value'] !== $before['source']['value'] ) ) { return new WP_Error( 'rankmath_search_title_source_conflict', 'Preserve the existing registered source. Explicit source-language alignment is allowed only when the unchanged current source text is mislabeled as the selected target language.' ); }
 		$value = $input['value'] ?? null;
 		if ( ! is_string( $value ) || '' === trim( $value ) || strlen( $value ) > 2000 || wp_strip_all_tags( $value ) !== $value ) { return new WP_Error( 'rankmath_search_translation_invalid', 'Supply a plain-text title template of at most 2000 bytes.' ); }
 		preg_match_all( '/%[^%\s]+%/', $before['source']['value'], $source_tokens );
@@ -70,9 +72,21 @@ function mcp_rankmath_update_search_title_translation( array $input = array() ) 
 		sort( $source_tokens[0] ); sort( $target_tokens[0] );
 		if ( $source_tokens[0] !== $target_tokens[0] ) { return new WP_Error( 'rankmath_search_translation_tokens', 'Preserve every native Rank Math placeholder exactly.' ); }
 		if ( ! defined( 'ICL_TM_COMPLETE' ) || ! defined( 'ICL_TM_WAITING_FOR_TRANSLATOR' ) || ! defined( 'ICL_TM_IN_PROGRESS' ) ) { throw new RuntimeException( 'Native lifecycle unavailable.' ); }
-		if ( $before['target'] && in_array( $before['target']['status'], array( ICL_TM_WAITING_FOR_TRANSLATOR, ICL_TM_IN_PROGRESS ), true ) ) { return new WP_Error( 'rankmath_search_translation_job_active', 'Preserve the waiting or in-progress native translation and review its job first.' ); }
-		if ( true !== ( $input['confirm'] ?? false ) ) { return array( 'success' => true, 'applied' => false, 'before' => $before, 'proposed_value' => $value, 'registration_required' => ! $before['registered'] ); }
+		if ( $before['has_active_native_job'] || ( $before['target'] && in_array( $before['target']['status'], array( ICL_TM_WAITING_FOR_TRANSLATOR, ICL_TM_IN_PROGRESS ), true ) ) ) { return new WP_Error( 'rankmath_search_translation_job_active', 'Preserve the waiting or in-progress native translation and review its job first.' ); }
+		if ( true !== ( $input['confirm'] ?? false ) ) { return array( 'success' => true, 'applied' => false, 'before' => $before, 'proposed_value' => $value, 'registration_required' => ! $before['registered'], 'source_language_alignment_required' => $before['source_conflict'] ); }
 		if ( ( $input['expected_source_hash'] ?? '' ) !== $before['source_hash'] || ( $input['expected_target_hash'] ?? '' ) !== $before['target_hash'] ) { return new WP_Error( 'rankmath_search_translation_stale', 'The selected source or target changed after review.' ); }
+		$initial_registration = $before['registered_source'];
+		$source_aligned = false;
+		if ( $before['source_conflict'] ) {
+			$factory = \WPML\Container\make( 'WPML_ST_String_Factory' );
+			$string = $factory->find_by_id( $before['source']['id'] );
+			if ( ! is_callable( array( $string, 'set_language' ) ) || $string->get_value() !== $before['source']['value'] || $string->get_language() !== $before['target_language'] ) { throw new RuntimeException( 'Native source changed before language alignment.' ); }
+			$string->set_language( $before['source']['language'] );
+			$aligned = mcp_rankmath_search_title_translation_state( $before['target_language'] );
+			if ( $aligned['source_conflict'] || $aligned['source'] !== $before['source'] || $aligned['target_hash'] !== $before['target_hash'] || $aligned['default_language_translation'] !== $before['default_language_translation'] ) { throw new RuntimeException( 'Native language alignment requires fresh review before translation.' ); }
+			$source_aligned = true;
+			$before = $aligned;
+		}
 		if ( ! $before['registered'] ) {
 			if ( true !== ( $input['register_if_missing'] ?? false ) ) { return new WP_Error( 'rankmath_search_title_registration_required', 'The fixed public search-title string is not registered. Preview and explicitly select register_if_missing to register only this current source through native WPML.' ); }
 			if ( ! has_action( 'wpml_register_single_string' ) ) { throw new RuntimeException( 'Native registration API unavailable.' ); }
@@ -88,7 +102,7 @@ function mcp_rankmath_update_search_title_translation( array $input = array() ) 
 		$id = icl_add_string_translation( $before['source']['id'], $before['target_language'], $value, ICL_TM_COMPLETE );
 		if ( ! $id ) { throw new RuntimeException( 'Native write not confirmed.' ); }
 		$after = mcp_rankmath_search_title_translation_state( $before['target_language'] );
-		return array( 'success' => $before['source_hash'] === $after['source_hash'] && null !== $after['target'] && $value === $after['target']['value'] && ICL_TM_COMPLETE === $after['target']['status'], 'applied' => true, 'before' => $before, 'after' => $after, 'verification_required' => true );
+		return array( 'success' => $before['source_hash'] === $after['source_hash'] && null !== $after['target'] && $value === $after['target']['value'] && ICL_TM_COMPLETE === $after['target']['status'], 'applied' => true, 'before' => $before, 'after' => $after, 'verification_required' => true, 'source_language_aligned' => $source_aligned, 'initial_registered_source' => $initial_registration );
 	} catch ( Throwable $error ) { return new WP_Error( 'rankmath_search_translation_failed', 'The native public search-title operation failed or was denied. Re-read the selected translation before retrying; no alternate write is used.' ); }
 }
 
@@ -110,12 +124,13 @@ function mcp_rankmath_register_search_translation_abilities(): void {
 	$write = $common;
 	$hash = array( 'type' => 'string', 'pattern' => '^[a-f0-9]{64}$' );
 	$write['label'] = 'Update Search Title Translation';
-	$write['description'] = 'Preview or complete the registered public search-title translation with native WPML permissions, source/target hashes and unchanged placeholders. Explicit register_if_missing can register only this fixed public source if absent. Existing source settings, other strings and active jobs are preserved.';
+	$write['description'] = 'Preview or complete the registered public search-title translation with native WPML permissions, source/target hashes and unchanged placeholders. Explicit register_if_missing can register only this fixed public source if absent. Explicit align_source_language can correct the fixed source language only when its text is unchanged and mislabeled as the requested target. Source settings, other strings and active jobs are preserved.';
 	$write['input_schema'] = array( 'type' => 'object', 'properties' => array(
 		'target_language' => $lang,
 		'value' => array( 'type' => 'string', 'minLength' => 1, 'maxLength' => 2000 ),
 		'confirm' => array( 'type' => 'boolean', 'default' => false ),
 		'register_if_missing' => array( 'type' => 'boolean', 'default' => false ),
+		'align_source_language' => array( 'type' => 'boolean', 'default' => false ),
 		'expected_source_hash' => $hash,
 		'expected_target_hash' => $hash,
 	), 'required' => array( 'target_language', 'value' ), 'additionalProperties' => false );
