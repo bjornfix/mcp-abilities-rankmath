@@ -2,14 +2,14 @@
 
 Turn an SEO review into a set of changes you can check in WordPress. MCP Abilities - Rank Math lets an authenticated agent find missing metadata, inspect internal links, repair approved redirects, and read back the result through 34 WordPress abilities.
 
-[![Release 1.1.22](https://img.shields.io/badge/release-1.1.22-blue.svg)](https://downloads.devenia.com/mcp-abilities-rankmath.zip)
+[![Release 1.1.23](https://img.shields.io/badge/release-1.1.23-blue.svg)](https://downloads.devenia.com/mcp-abilities-rankmath.zip)
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/gpl-2.0.html)
 [![WordPress](https://img.shields.io/badge/WordPress-6.9%2B-blue.svg)](https://wordpress.org/)
 [![PHP](https://img.shields.io/badge/PHP-8.0%2B-purple.svg)](https://www.php.net/)
 
 **Tested up to:** 7.1
 
-**Stable tag:** 1.1.22
+**Stable tag:** 1.1.23
 
 **License:** GPLv2 or later
 
@@ -167,10 +167,14 @@ For update notifications in WordPress, install [Devenia MCP Updater](https://dow
 
 ## Search title translations
 
-For a multilingual site with WPML String Translation, read `rankmath/get-search-title-translation` with `{"target_language":"en"}`. Translate only the literal words and keep every Rank Math placeholder unchanged. Preview with `rankmath/update-search-title-translation`, then confirm with the returned source and target hashes. The operation uses the registered native public search-title string, preserves the source setting, and refuses active translation jobs. It requires native WPML translation permission and WordPress settings permission. It does not expose arbitrary admin strings or register missing strings. Check the resulting search page after saving.
+For a multilingual site with WPML String Translation, read `rankmath/get-search-title-translation` with `{"target_language":"en"}`. Translate only the literal words and keep every Rank Math placeholder unchanged. Preview with `rankmath/update-search-title-translation`, then confirm with the returned source and target hashes. The operation uses the registered native public search-title string, preserves the source setting, and refuses active translation jobs. It requires native WPML translation permission and WordPress settings permission. It does not expose arbitrary admin strings. If this fixed public source is missing, preview first, then explicitly set `register_if_missing: true` with confirmation to register only the current source through native WPML. A conflicting existing string is refused. Check the resulting search page after saving.
 
 ## Changelog
 
+
+### 1.1.23
+
+Report missing public search-title registration and support explicit native registration of only that fixed current source, while refusing conflicting strings and preserving settings.
 
 ### 1.1.22
 

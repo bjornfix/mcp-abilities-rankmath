@@ -22,8 +22,14 @@ function mcp_rankmath_search_title_translation_state( string $target_language ):
 	$name = '[rank-math-options-titles]search_title';
 	$factory = \WPML\Container::make( 'WPML_ST_String_Factory' );
 	$id = (int) $factory->get_string_id( $value, $domain, $name );
+	if ( ! $id ) {
+		$existing = $factory->find_by_name( $name );
+		if ( $existing->exists() ) { throw new RuntimeException( 'Existing native public string does not match the current source.' ); }
+		$source = array( 'id' => 0, 'language' => $source_language, 'value' => $value );
+		return array( 'registered' => false, 'source' => $source, 'source_hash' => hash( 'sha256', (string) wp_json_encode( $source ) ), 'target_language' => $target_language, 'target' => null, 'target_hash' => hash( 'sha256', (string) wp_json_encode( null ) ) );
+	}
 	$string = $factory->find_by_id( $id );
-	if ( ! $id || ! $string->exists() || $string->get_context() !== $domain || $string->get_name() !== $name || $string->get_value() !== $value || $string->get_language() !== $source_language ) { throw new RuntimeException( 'Native registered source mismatch.' ); }
+	if ( ! $string->exists() || $string->get_context() !== $domain || $string->get_name() !== $name || $string->get_value() !== $value || $string->get_language() !== $source_language ) { throw new RuntimeException( 'Native registered source mismatch.' ); }
 	$target = null;
 	foreach ( $string->get_translations() as $translation ) {
 		$translation = (array) $translation;
@@ -32,7 +38,7 @@ function mcp_rankmath_search_title_translation_state( string $target_language ):
 		}
 	}
 	$source = array( 'id' => $id, 'language' => $source_language, 'value' => $value );
-	return array( 'source' => $source, 'source_hash' => hash( 'sha256', (string) wp_json_encode( $source ) ), 'target_language' => $target_language, 'target' => $target, 'target_hash' => hash( 'sha256', (string) wp_json_encode( $target ) ) );
+	return array( 'registered' => true, 'source' => $source, 'source_hash' => hash( 'sha256', (string) wp_json_encode( $source ) ), 'target_language' => $target_language, 'target' => $target, 'target_hash' => hash( 'sha256', (string) wp_json_encode( $target ) ) );
 }
 
 /** Return selected public text only; refuse unavailable native registration. */
@@ -53,8 +59,18 @@ function mcp_rankmath_update_search_title_translation( array $input = array() ) 
 		if ( $source_tokens[0] !== $target_tokens[0] ) { return new WP_Error( 'rankmath_search_translation_tokens', 'Preserve every native Rank Math placeholder exactly.' ); }
 		if ( ! defined( 'ICL_TM_COMPLETE' ) || ! defined( 'ICL_TM_WAITING_FOR_TRANSLATOR' ) || ! defined( 'ICL_TM_IN_PROGRESS' ) ) { throw new RuntimeException( 'Native lifecycle unavailable.' ); }
 		if ( $before['target'] && in_array( $before['target']['status'], array( ICL_TM_WAITING_FOR_TRANSLATOR, ICL_TM_IN_PROGRESS ), true ) ) { return new WP_Error( 'rankmath_search_translation_job_active', 'Preserve the waiting or in-progress native translation and review its job first.' ); }
-		if ( true !== ( $input['confirm'] ?? false ) ) { return array( 'success' => true, 'applied' => false, 'before' => $before, 'proposed_value' => $value ); }
+		if ( true !== ( $input['confirm'] ?? false ) ) { return array( 'success' => true, 'applied' => false, 'before' => $before, 'proposed_value' => $value, 'registration_required' => ! $before['registered'] ); }
 		if ( ( $input['expected_source_hash'] ?? '' ) !== $before['source_hash'] || ( $input['expected_target_hash'] ?? '' ) !== $before['target_hash'] ) { return new WP_Error( 'rankmath_search_translation_stale', 'The selected source or target changed after review.' ); }
+		if ( ! $before['registered'] ) {
+			if ( true !== ( $input['register_if_missing'] ?? false ) ) { return new WP_Error( 'rankmath_search_title_registration_required', 'The fixed public search-title string is not registered. Preview and explicitly select register_if_missing to register only this current source through native WPML.' ); }
+			if ( ! has_action( 'wpml_register_single_string' ) ) { throw new RuntimeException( 'Native registration API unavailable.' ); }
+			do_action( 'wpml_register_single_string', 'admin_texts_rank-math-options-titles', '[rank-math-options-titles]search_title', $before['source']['value'], false, $before['source']['language'] );
+			$factory = \WPML\Container::make( 'WPML_ST_String_Factory' );
+			$factory->clear_string_id_cache();
+			$registered = mcp_rankmath_search_title_translation_state( $before['target_language'] );
+			if ( ! $registered['registered'] || $registered['source']['value'] !== $before['source']['value'] || $registered['source']['language'] !== $before['source']['language'] || null !== $registered['target'] ) { throw new RuntimeException( 'Native registration did not preserve the selected source and empty target. Re-read before retrying.' ); }
+			$before = $registered;
+		}
 		if ( $before['target'] && $before['target']['value'] === $value && ICL_TM_COMPLETE === $before['target']['status'] ) { return array( 'success' => true, 'applied' => false, 'unchanged' => true, 'after' => $before ); }
 		if ( ! function_exists( 'icl_add_string_translation' ) ) { throw new RuntimeException( 'Native writer unavailable.' ); }
 		$id = icl_add_string_translation( $before['source']['id'], $before['target_language'], $value, ICL_TM_COMPLETE );
@@ -82,11 +98,12 @@ function mcp_rankmath_register_search_translation_abilities(): void {
 	$write = $common;
 	$hash = array( 'type' => 'string', 'pattern' => '^[a-f0-9]{64}$' );
 	$write['label'] = 'Update Search Title Translation';
-	$write['description'] = 'Preview or complete the registered public search-title translation with native WPML permissions, source/target hashes and unchanged placeholders. No source settings or arbitrary admin strings are written.';
+	$write['description'] = 'Preview or complete the registered public search-title translation with native WPML permissions, source/target hashes and unchanged placeholders. Explicit register_if_missing can register only this fixed public source if absent. Existing source settings, other strings and active jobs are preserved.';
 	$write['input_schema'] = array( 'type' => 'object', 'properties' => array(
 		'target_language' => $lang,
 		'value' => array( 'type' => 'string', 'minLength' => 1, 'maxLength' => 2000 ),
 		'confirm' => array( 'type' => 'boolean', 'default' => false ),
+		'register_if_missing' => array( 'type' => 'boolean', 'default' => false ),
 		'expected_source_hash' => $hash,
 		'expected_target_hash' => $hash,
 	), 'required' => array( 'target_language', 'value' ), 'additionalProperties' => false );
