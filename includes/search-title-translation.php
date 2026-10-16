@@ -24,12 +24,12 @@ function mcp_rankmath_search_title_translation_state( string $target_language ):
 	$id = (int) $factory->get_string_id( $value, $domain, $name );
 	if ( ! $id ) {
 		$existing = $factory->find_by_name( $name );
-		if ( $existing->exists() ) { throw new RuntimeException( 'Existing native public string does not match the current source.' ); }
+		if ( $existing->exists() ) { throw new RuntimeException( 'Existing native public string does not match the current source.', 11 ); }
 		$source = array( 'id' => 0, 'language' => $source_language, 'value' => $value );
 		return array( 'registered' => false, 'source' => $source, 'source_hash' => hash( 'sha256', (string) wp_json_encode( $source ) ), 'target_language' => $target_language, 'target' => null, 'target_hash' => hash( 'sha256', (string) wp_json_encode( null ) ) );
 	}
 	$string = $factory->find_by_id( $id );
-	if ( ! $string->exists() || $string->get_context() !== $domain || $string->get_name() !== $name || $string->get_value() !== $value || $string->get_language() !== $source_language ) { throw new RuntimeException( 'Native registered source mismatch.' ); }
+	if ( ! $string->exists() || $string->get_context() !== $domain || $string->get_name() !== $name || $string->get_value() !== $value || $string->get_language() !== $source_language ) { throw new RuntimeException( 'Native registered source mismatch.', 11 ); }
 	$target = null;
 	foreach ( $string->get_translations() as $translation ) {
 		$translation = (array) $translation;
@@ -44,7 +44,7 @@ function mcp_rankmath_search_title_translation_state( string $target_language ):
 /** Return selected public text only; refuse unavailable native registration. */
 function mcp_rankmath_get_search_title_translation( array $input = array() ) {
 	try { return array( 'success' => true ) + mcp_rankmath_search_title_translation_state( (string) ( $input['target_language'] ?? '' ) ); }
-	catch ( Throwable $error ) { return new WP_Error( 'rankmath_search_translation_unavailable', 'The registered public search-title translation is unavailable or denied. No alternate storage query or string registration is used.' ); }
+	catch ( Throwable $error ) { return new WP_Error( 11 === $error->getCode() ? 'rankmath_search_title_source_conflict' : 'rankmath_search_translation_unavailable', 11 === $error->getCode() ? 'An existing registered public search-title string conflicts with the current default-language source. Preserve it and review the selected native string first.' : 'The public search-title translation is unavailable or denied. No alternate storage query is used.' ); }
 }
 
 /** Preview or update one native translation without changing Rank Math settings. */
