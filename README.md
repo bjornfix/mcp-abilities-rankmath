@@ -2,14 +2,14 @@
 
 Turn an SEO review into a set of changes you can check in WordPress. MCP Abilities - Rank Math lets an authenticated agent find missing metadata, inspect internal links, repair approved redirects, and read back the result through 34 WordPress abilities.
 
-[![Release 1.1.24](https://img.shields.io/badge/release-1.1.24-blue.svg)](https://downloads.devenia.com/mcp-abilities-rankmath.zip)
+[![Release 1.1.25](https://img.shields.io/badge/release-1.1.25-blue.svg)](https://downloads.devenia.com/mcp-abilities-rankmath.zip)
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/gpl-2.0.html)
 [![WordPress](https://img.shields.io/badge/WordPress-6.9%2B-blue.svg)](https://wordpress.org/)
 [![PHP](https://img.shields.io/badge/PHP-8.0%2B-purple.svg)](https://www.php.net/)
 
 **Tested up to:** 7.1
 
-**Stable tag:** 1.1.24
+**Stable tag:** 1.1.25
 
 **License:** GPLv2 or later
 
@@ -171,6 +171,10 @@ For a multilingual site with WPML String Translation, read `rankmath/get-search-
 
 ## Changelog
 
+
+### 1.1.25
+
+Inspect the one public search-title registration when its source language or value conflicts with the current source. Translation writes continue to refuse that conflict. No unrelated admin strings are returned.
 
 ### 1.1.24
 

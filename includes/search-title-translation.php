@@ -21,24 +21,35 @@ function mcp_rankmath_search_title_translation_state( string $target_language ):
 	$domain = 'admin_texts_rank-math-options-titles';
 	$name = '[rank-math-options-titles]search_title';
 	$factory = \WPML\Container\make( 'WPML_ST_String_Factory' );
-	$id = (int) $factory->get_string_id( $value, $domain, $name );
-	if ( ! $id ) {
-		$existing = $factory->find_by_name( $name );
-		if ( $existing->exists() ) { throw new RuntimeException( 'Existing native public string does not match the current source.', 11 ); }
-		$source = array( 'id' => 0, 'language' => $source_language, 'value' => $value );
-		return array( 'registered' => false, 'source' => $source, 'source_hash' => hash( 'sha256', (string) wp_json_encode( $source ) ), 'target_language' => $target_language, 'target' => null, 'target_hash' => hash( 'sha256', (string) wp_json_encode( null ) ) );
-	}
-	$string = $factory->find_by_id( $id );
-	if ( ! $string->exists() || $string->get_context() !== $domain || $string->get_name() !== $name || $string->get_value() !== $value || $string->get_language() !== $source_language ) { throw new RuntimeException( 'Native registered source mismatch.', 11 ); }
+	$string = $factory->find_by_name( $name );
+	$registered = $string->exists();
 	$target = null;
-	foreach ( $string->get_translations() as $translation ) {
-		$translation = (array) $translation;
-		if ( ( $translation['language'] ?? '' ) === $target_language ) {
-			$target = array( 'value' => (string) ( $translation['value'] ?? '' ), 'status' => (int) ( $translation['status'] ?? 0 ) );
+	$default_translation = null;
+	$id = 0;
+	$native_source = null;
+	if ( $registered ) {
+		if ( $string->get_context() !== $domain || $string->get_name() !== $name ) { throw new RuntimeException( 'Public string identity mismatch.' ); }
+		$native_value = (string) $string->get_value();
+		if ( strlen( $native_value ) > 2000 ) { throw new RuntimeException( 'Public title exceeds bounded scope.' ); }
+		$id = (int) $factory->get_string_id( $native_value, $domain, $name );
+		if ( ! $id ) { throw new RuntimeException( 'Native identity readback failed.' ); }
+		$native_source = array( 'id' => $id, 'language' => (string) $string->get_language(), 'value' => $native_value );
+		foreach ( $string->get_translations() as $translation ) {
+			$translation = (array) $translation;
+			$selected = array( 'value' => (string) ( $translation['value'] ?? '' ), 'status' => (int) ( $translation['status'] ?? 0 ) );
+			if ( ( $translation['language'] ?? '' ) === $target_language ) { $target = $selected; }
+			if ( ( $translation['language'] ?? '' ) === $source_language ) { $default_translation = $selected; }
 		}
 	}
 	$source = array( 'id' => $id, 'language' => $source_language, 'value' => $value );
-	return array( 'registered' => true, 'source' => $source, 'source_hash' => hash( 'sha256', (string) wp_json_encode( $source ) ), 'target_language' => $target_language, 'target' => $target, 'target_hash' => hash( 'sha256', (string) wp_json_encode( $target ) ) );
+	$conflict = $registered && ( $native_source['language'] !== $source_language || $native_source['value'] !== $value );
+	return array( 'registered' => $registered, 'source' => $source,
+		'registered_source' => $native_source, 'source_conflict' => $conflict,
+		'default_language_translation' => $default_translation,
+		'target_is_registered_source' => $registered && $native_source['language'] === $target_language,
+		'source_hash' => hash( 'sha256', (string) wp_json_encode( array( $source, $native_source ) ) ),
+		'target_language' => $target_language, 'target' => $target,
+		'target_hash' => hash( 'sha256', (string) wp_json_encode( $target ) ) );
 }
 
 /** Return selected public text only; refuse unavailable native registration. */
@@ -51,6 +62,7 @@ function mcp_rankmath_get_search_title_translation( array $input = array() ) {
 function mcp_rankmath_update_search_title_translation( array $input = array() ) {
 	try {
 		$before = mcp_rankmath_search_title_translation_state( (string) ( $input['target_language'] ?? '' ) );
+		if ( $before['source_conflict'] ) { return new WP_Error( 'rankmath_search_title_source_conflict', 'Preserve the existing registered public source and review the selected native registration before writing a translation.' ); }
 		$value = $input['value'] ?? null;
 		if ( ! is_string( $value ) || '' === trim( $value ) || strlen( $value ) > 2000 || wp_strip_all_tags( $value ) !== $value ) { return new WP_Error( 'rankmath_search_translation_invalid', 'Supply a plain-text title template of at most 2000 bytes.' ); }
 		preg_match_all( '/%[^%\s]+%/', $before['source']['value'], $source_tokens );
