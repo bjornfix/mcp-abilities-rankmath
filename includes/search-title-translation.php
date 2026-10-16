@@ -11,7 +11,7 @@ function mcp_rankmath_search_translation_allowed(): bool {
 function mcp_rankmath_search_title_translation_state( string $target_language ): array {
 	global $sitepress;
 	if ( ! mcp_rankmath_search_translation_allowed() ) { throw new RuntimeException( 'Native translation permission required.' ); }
-	if ( ! is_object( $sitepress ) || ! is_callable( array( $sitepress, 'get_active_languages' ) ) || ! class_exists( '\WPML\Container' ) ) { throw new RuntimeException( 'Native WPML required.' ); }
+	if ( ! is_object( $sitepress ) || ! is_callable( array( $sitepress, 'get_active_languages' ) ) || ! function_exists( '\WPML\Container\make' ) ) { throw new RuntimeException( 'Native WPML required.' ); }
 	$languages = $sitepress->get_active_languages();
 	$source_language = (string) $sitepress->get_default_language();
 	if ( ! isset( $languages[ $target_language ] ) || $target_language === $source_language ) { throw new RuntimeException( 'Select an active secondary language.' ); }
@@ -20,7 +20,7 @@ function mcp_rankmath_search_title_translation_state( string $target_language ):
 	if ( ! is_string( $value ) || '' === $value || strlen( $value ) > 2000 ) { throw new RuntimeException( 'Public search title unavailable.' ); }
 	$domain = 'admin_texts_rank-math-options-titles';
 	$name = '[rank-math-options-titles]search_title';
-	$factory = \WPML\Container::make( 'WPML_ST_String_Factory' );
+	$factory = \WPML\Container\make( 'WPML_ST_String_Factory' );
 	$id = (int) $factory->get_string_id( $value, $domain, $name );
 	if ( ! $id ) {
 		$existing = $factory->find_by_name( $name );
@@ -65,7 +65,7 @@ function mcp_rankmath_update_search_title_translation( array $input = array() ) 
 			if ( true !== ( $input['register_if_missing'] ?? false ) ) { return new WP_Error( 'rankmath_search_title_registration_required', 'The fixed public search-title string is not registered. Preview and explicitly select register_if_missing to register only this current source through native WPML.' ); }
 			if ( ! has_action( 'wpml_register_single_string' ) ) { throw new RuntimeException( 'Native registration API unavailable.' ); }
 			do_action( 'wpml_register_single_string', 'admin_texts_rank-math-options-titles', '[rank-math-options-titles]search_title', $before['source']['value'], false, $before['source']['language'] );
-			$factory = \WPML\Container::make( 'WPML_ST_String_Factory' );
+			$factory = \WPML\Container\make( 'WPML_ST_String_Factory' );
 			$factory->clear_string_id_cache();
 			$registered = mcp_rankmath_search_title_translation_state( $before['target_language'] );
 			if ( ! $registered['registered'] || $registered['source']['value'] !== $before['source']['value'] || $registered['source']['language'] !== $before['source']['language'] || null !== $registered['target'] ) { throw new RuntimeException( 'Native registration did not preserve the selected source and empty target. Re-read before retrying.' ); }

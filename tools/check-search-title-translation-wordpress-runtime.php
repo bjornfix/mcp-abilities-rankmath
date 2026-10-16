@@ -1,7 +1,7 @@
 <?php
-namespace WPML {
- if (class_exists(Container::class,false)) { throw new \RuntimeException('Use isolated --skip-plugins; never replace native WPML.'); }
- if(!class_exists(Container::class,false)){class Container { public static $factory; public static function make($name){if($name!=='WPML_ST_String_Factory'){throw new \RuntimeException('Unexpected dependency.');}return self::$factory;} }}
+namespace WPML\Container {
+ if(function_exists(__NAMESPACE__.'\\make')){throw new \RuntimeException('Use isolated --skip-plugins; never replace native WPML.');}
+ if(!function_exists(__NAMESPACE__.'\\make')){function make($name){if($name!=='WPML_ST_String_Factory'){throw new \RuntimeException('Unexpected native dependency.');}return $GLOBALS['search_native_factory'];}}
 }
 namespace {
  if(!defined('ABSPATH')||!function_exists('wp_get_ability')){throw new RuntimeException('WordPress required.');}
@@ -12,7 +12,7 @@ namespace {
  $GLOBALS['sitepress']=new class {public function get_active_languages(){return array('no'=>array(),'en'=>array());}public function get_default_language(){return 'no';}};
  $GLOBALS['search_native_target']=array('value'=>'Old %search_query% %page% %sep% %sitename%','status'=>ICL_TM_COMPLETE);$GLOBALS['search_native_writes']=0;$GLOBALS['search_native_registered']=true;
  $string=new class {public function exists(){return true;}public function get_context(){return 'admin_texts_rank-math-options-titles';}public function get_name(){return '[rank-math-options-titles]search_title';}public function get_value(){return get_option('rank-math-options-titles')['search_title'];}public function get_language(){return 'no';}public function get_translations(){return null===$GLOBALS['search_native_target']?array():array(array('language'=>'en')+$GLOBALS['search_native_target']);}};
- \WPML\Container::$factory=new class($string){private $string;public function __construct($s){$this->string=$s;}public function get_string_id($v,$domain,$name){if($domain!=='admin_texts_rank-math-options-titles'||$name!=='[rank-math-options-titles]search_title'){throw new RuntimeException('Unbounded admin text access.');}return $GLOBALS['search_native_registered']&&empty($GLOBALS['search_native_conflict'])?123:0;}public function find_by_name($name){return new class {public function exists(){return $GLOBALS['search_native_registered'];}};}public function clear_string_id_cache(){}public function find_by_id($id){return $this->string;}};
+ $GLOBALS['search_native_factory']=new class($string){private $string;public function __construct($s){$this->string=$s;}public function get_string_id($v,$domain,$name){if($domain!=='admin_texts_rank-math-options-titles'||$name!=='[rank-math-options-titles]search_title'){throw new RuntimeException('Unbounded admin text access.');}return $GLOBALS['search_native_registered']&&empty($GLOBALS['search_native_conflict'])?123:0;}public function find_by_name($name){return new class {public function exists(){return $GLOBALS['search_native_registered'];}};}public function clear_string_id_cache(){}public function find_by_id($id){return $this->string;}};
  if(function_exists('icl_add_string_translation')){throw new RuntimeException('Use --skip-plugins; preserve native WPML.');}
  if(!function_exists('icl_add_string_translation')){function icl_add_string_translation($id,$lang,$value,$status){if($id!==123||$lang!=='en'){throw new RuntimeException('Wrong native translation.');}$GLOBALS['search_native_writes']++;$GLOBALS['search_native_target']=array('value'=>$value,'status'=>$status);return 456;}}
  $assert=static function($ok,$why){if(!$ok){throw new RuntimeException($why);}};

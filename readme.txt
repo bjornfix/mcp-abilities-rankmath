@@ -4,7 +4,7 @@ Tags: seo, rank math, mcp, api, automation
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.1.23
+Stable tag: 1.1.24
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -109,6 +109,9 @@ For update notifications in WordPress, install [Devenia MCP Updater](https://dow
 5. The abilities are now available via the MCP endpoint
 
 == Changelog ==
+
+= 1.1.24 =
+* Use WPML’s actual namespaced container function for native search-title access and registration.
 
 = 1.1.23 =
 * Report missing public search-title registration and support explicit native registration of only that fixed current source, while refusing conflicting strings and preserving settings.
