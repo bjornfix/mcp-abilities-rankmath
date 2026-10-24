@@ -112,6 +112,12 @@ final class MCP_RankMath_Devenia_Workflow_Page_Sitemap_Provider extends \RankMat
 			return new WP_Query( $args );
 		}
 
+		// WPML frontend rejects the global 'all' language; its native query filter
+		// accepts the explicit per-query language without disabling other filters.
+		if ( ! array_key_exists( 'lang', $args ) ) {
+			$args['lang'] = 'all';
+		}
+
 		$uses_scope_stack = ! defined( 'ICL_SITEPRESS_VERSION' ) || version_compare( ICL_SITEPRESS_VERSION, '5.0', '>=' );
 		do_action( 'wpml_switch_language', 'all' );
 		try {

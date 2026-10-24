@@ -4,7 +4,7 @@ Tags: seo, rank math, mcp, api, automation
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.1.28
+Stable tag: 1.1.29
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -109,6 +109,9 @@ For update notifications in WordPress, install [Devenia MCP Updater](https://dow
 5. The abilities are now available via the MCP endpoint
 
 == Changelog ==
+
+= 1.1.29 =
+* Keep public page sitemaps complete across WPML languages using the native per-query language argument. Preserve explicit caller choices, other filters and language scopes.
 
 = 1.1.28 =
 * Read all active WPML languages for stable page sitemap pagination while preserving WordPress query filters and the caller language scope.
