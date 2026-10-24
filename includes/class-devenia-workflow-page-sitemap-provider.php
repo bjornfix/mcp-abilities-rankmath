@@ -62,7 +62,7 @@ final class MCP_RankMath_Devenia_Workflow_Page_Sitemap_Provider extends \RankMat
 					'no_found_rows' => true,
 					'ignore_sticky_posts' => true,
 					'update_post_term_cache' => false,
-					'suppress_filters' => false,
+					'suppress_filters' => true,
 				),
 				$batch_size,
 				$scan_offset
