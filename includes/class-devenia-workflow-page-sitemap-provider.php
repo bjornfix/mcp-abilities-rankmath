@@ -62,12 +62,12 @@ final class MCP_RankMath_Devenia_Workflow_Page_Sitemap_Provider extends \RankMat
 					'no_found_rows' => true,
 					'ignore_sticky_posts' => true,
 					'update_post_term_cache' => false,
-					'suppress_filters' => true,
+					'suppress_filters' => false,
 				),
 				$batch_size,
 				$scan_offset
 			);
-			$query = new WP_Query( is_array( $args ) ? $args : array() );
+			$query = $this->query_pages_in_all_wpml_languages( is_array( $args ) ? $args : array() );
 			$batch = array_values( array_filter( (array) $query->posts, static fn( $post ): bool => $post instanceof WP_Post ) );
 			if ( empty( $batch ) ) {
 				break;
@@ -95,5 +95,29 @@ final class MCP_RankMath_Devenia_Workflow_Page_Sitemap_Provider extends \RankMat
 		}
 
 		return $posts;
+	}
+
+	/**
+	 * Use WPML's native all-language scope without suppressing query filters.
+	 *
+	 * The scope covers one query only. WPML 5 uses a stack and closes the
+	 * current frame with null; the legacy API restores the prior language.
+	 *
+	 * @param array<string,mixed> $args Native page query arguments.
+	 * @return WP_Query
+	 */
+	private function query_pages_in_all_wpml_languages( array $args ): WP_Query {
+		$language = apply_filters( 'wpml_current_language', null );
+		if ( ! is_string( $language ) || '' === $language || 'all' === $language || false === has_action( 'wpml_switch_language' ) ) {
+			return new WP_Query( $args );
+		}
+
+		$uses_scope_stack = ! defined( 'ICL_SITEPRESS_VERSION' ) || version_compare( ICL_SITEPRESS_VERSION, '5.0', '>=' );
+		do_action( 'wpml_switch_language', 'all' );
+		try {
+			return new WP_Query( $args );
+		} finally {
+			do_action( 'wpml_switch_language', $uses_scope_stack ? null : $language );
+		}
 	}
 }
