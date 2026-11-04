@@ -2,14 +2,14 @@
 
 Turn an SEO review into a set of changes you can check in WordPress. MCP Abilities - Rank Math lets an authenticated agent find missing metadata, inspect internal links, repair approved redirects, and read back the result through 34 WordPress abilities.
 
-[![Release 1.1.30](https://img.shields.io/badge/release-1.1.30-blue.svg)](https://downloads.devenia.com/mcp-abilities-rankmath.zip)
+[![Release 1.1.31](https://img.shields.io/badge/release-1.1.31-blue.svg)](https://downloads.devenia.com/mcp-abilities-rankmath.zip)
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/gpl-2.0.html)
 [![WordPress](https://img.shields.io/badge/WordPress-6.9%2B-blue.svg)](https://wordpress.org/)
 [![PHP](https://img.shields.io/badge/PHP-8.0%2B-purple.svg)](https://www.php.net/)
 
 **Tested up to:** 7.1
 
-**Stable tag:** 1.1.30
+**Stable tag:** 1.1.31
 
 **License:** GPLv2 or later
 
@@ -122,6 +122,8 @@ Read the [plugin page](https://devenia.com/plugins/mcp-abilities-rankmath/) and 
 
 Content reads and writes require `edit_posts`; individual metadata operations also check the affected post. Inbound-link and FAQ reports also restrict post data to content the caller can edit. Administrative settings, modules, routes, logs, and redirect management require `manage_options`.
 
+Native WordPress metadata authorization for `rank_math_title` and `rank_math_description` requires both permission to edit the target post and Rank Math's `rank_math_onpage_general` capability. Other protected metadata keeps its existing authorization policy. No role or capability is granted by this integration.
+
 Deleting schema records requires `confirm_delete: true`. Clearing all 404 logs requires `confirm: true`. These confirmations apply to those operations; they are not a general approval system for every write. Global option writes can replace a complete option value, so read and preserve fields you intend to keep.
 
 SEO scores are stored Rank Math values, not fresh measurements or search rankings. An audit of stored custom fields does not establish the final rendered title, schema, indexability, or search-engine treatment. Review those outputs separately. The plugin does not supply keyword research, traffic data, an AI model, or a guarantee of indexing, rankings, or AI citations.
@@ -170,6 +172,10 @@ For update notifications in WordPress, install [Devenia MCP Updater](https://dow
 For a multilingual site with WPML String Translation, read `rankmath/get-search-title-translation` with `{"target_language":"en"}`. Translate only the literal words and keep every Rank Math placeholder unchanged. Preview with `rankmath/update-search-title-translation`, then confirm with the returned source and target hashes. The operation uses the registered native public search-title string, preserves the source setting, and refuses active translation jobs. It requires native WPML translation permission and WordPress settings permission. It does not expose arbitrary admin strings. If this fixed public source is missing, preview first, then explicitly set `register_if_missing: true` with confirmation to register only the current source through native WPML. A conflicting source value is refused. When only the source language is wrong and the unchanged source text is labeled as the requested target language, preview with `align_source_language: true`, then confirm with fresh hashes to correct only that native language label before translation. Active jobs are preserved. Check the resulting search page after saving.
 
 ## Changelog
+
+### 1.1.31
+
+Authorize the SEO title and description through native WordPress metadata checks when the user can edit the target post and has Rank Math's on-page SEO permission. Preserve protection for other metadata.
 
 ### 1.1.30
 

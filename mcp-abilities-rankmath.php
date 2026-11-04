@@ -3,7 +3,7 @@
  * Plugin Name: MCP Abilities - Rank Math
  * Plugin URI: https://devenia.com/plugins/mcp-abilities-rankmath/
  * Description: Rank Math SEO abilities for MCP. Get and update meta descriptions, titles, focus keywords, and other SEO settings.
- * Version: 1.1.30
+ * Version: 1.1.31
  * Author: basicus
  * Author URI: https://profiles.wordpress.org/basicus/
  * License: GPL-2.0+
@@ -46,6 +46,26 @@ function mcp_rankmath_check_dependencies(): bool {
 function mcp_rankmath_is_active(): bool {
 	return class_exists( 'RankMath' ) || defined( 'RANK_MATH_VERSION' );
 }
+
+/**
+ * Authorize the two search-presentation fields through native metadata policy.
+ *
+ * @param bool   $allowed  Existing authorization for the metadata key.
+ * @param string $meta_key Metadata key.
+ * @param int    $post_id  Target post ID.
+ * @param int    $user_id  User whose capability WordPress is checking.
+ * @return bool
+ */
+function mcp_rankmath_authorize_search_presentation_meta( bool $allowed, string $meta_key, int $post_id, int $user_id ): bool {
+	if ( ! mcp_rankmath_is_active() || ! in_array( $meta_key, array( 'rank_math_title', 'rank_math_description' ), true ) ) {
+		return $allowed;
+	}
+
+	return user_can( $user_id, 'edit_post', $post_id )
+		&& user_can( $user_id, 'rank_math_onpage_general' );
+}
+add_filter( 'auth_post_meta_rank_math_title', 'mcp_rankmath_authorize_search_presentation_meta', 10, 4 );
+add_filter( 'auth_post_meta_rank_math_description', 'mcp_rankmath_authorize_search_presentation_meta', 10, 4 );
 
 /**
  * Get all Rank Math meta keys we support.

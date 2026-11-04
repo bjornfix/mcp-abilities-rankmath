@@ -4,7 +4,7 @@ Tags: seo, rank math, mcp, api, automation
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.1.30
+Stable tag: 1.1.31
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -18,6 +18,10 @@ This add-on plugin extends [MCP Expose Abilities](https://devenia.com/plugins/mc
 
 * [MCP Expose Abilities](https://devenia.com/plugins/mcp-expose-abilities/) (core plugin)
 * [Rank Math SEO](https://wordpress.org/plugins/seo-by-rank-math/) plugin
+
+= Native Metadata Permissions =
+
+Native WordPress metadata authorization for `rank_math_title` and `rank_math_description` requires permission to edit the target post and Rank Math's `rank_math_onpage_general` capability. Other protected metadata keeps its existing policy. This integration grants no roles or capabilities.
 
 = Abilities Included =
 
@@ -109,6 +113,9 @@ For update notifications in WordPress, install [Devenia MCP Updater](https://dow
 5. The abilities are now available via the MCP endpoint
 
 == Changelog ==
+
+= 1.1.31 =
+* Authorize the SEO title and description through native WordPress metadata checks, requiring both target-post editing permission and Rank Math on-page SEO permission. Preserve other protected metadata policies.
 
 = 1.1.30 =
 * Match page sitemap counts and pagination to the same unique indexable pages, avoiding empty sitemap pages while retaining native multilingual and canonical filtering.
