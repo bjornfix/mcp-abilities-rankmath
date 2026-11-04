@@ -50,6 +50,8 @@ function mcp_rankmath_is_active(): bool {
 /**
  * Authorize the two search-presentation fields through native metadata policy.
  *
+ * Require both permissions whether Rank Math marks these fields protected or not.
+ *
  * @param bool   $allowed  Existing authorization for the metadata key.
  * @param string $meta_key Metadata key.
  * @param int    $post_id  Target post ID.

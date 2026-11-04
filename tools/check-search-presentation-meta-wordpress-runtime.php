@@ -68,9 +68,11 @@ try {
 	}
 	$scenario = 'both';
 	foreach ( $post_ids as $post_id ) {
-		foreach ( array( 'rank_math_focus_keyword', 'rank_math_robots', 'rank_math_canonical_url' ) as $key ) {
-			$assert( ! current_user_can( 'edit_post_meta', $post_id, $key ), "$post_id / $key: other protected key remains denied." );
-			$assert( is_wp_error( mcp_expose_validate_post_meta_write_policy( array( $key => 'Policy probe only' ), $post_id ) ), "$post_id / $key: MCP guard preserves denial." );
+		foreach ( array( 'rank_math_focus_keyword', 'rank_math_robots', 'rank_math_canonical_url', '_mcp_contract_private' ) as $key ) {
+			$protected = is_protected_meta( $key, 'post' );
+			$assert( false === has_filter( 'auth_post_meta_' . $key, 'mcp_rankmath_authorize_search_presentation_meta' ), "$post_id / $key: two-field authorization does not register for another key." );
+			$assert( ! $protected === current_user_can( 'edit_post_meta', $post_id, $key ), "$post_id / $key: existing native protection is preserved." );
+			$assert( $protected === is_wp_error( mcp_expose_validate_post_meta_write_policy( array( $key => 'Policy probe only' ), $post_id ) ), "$post_id / $key: MCP guard preserves native protection." );
 		}
 		$assert( current_user_can( 'edit_post_meta', $post_id, 'mcp_contract_plain_meta' ), "$post_id: ordinary unprotected metadata remains allowed." );
 		$assert( ! is_wp_error( mcp_expose_validate_post_meta_write_policy( array( 'mcp_contract_plain_meta' => 'Policy probe only' ), $post_id ) ), "$post_id: MCP ordinary metadata policy is preserved." );
