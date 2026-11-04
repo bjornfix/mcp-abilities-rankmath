@@ -66,9 +66,6 @@ function mcp_rankmath_authorize_search_presentation_meta( bool $allowed, string 
 	return user_can( $user_id, 'edit_post', $post_id )
 		&& user_can( $user_id, 'rank_math_onpage_general' );
 }
-add_filter( 'auth_post_meta_rank_math_title', 'mcp_rankmath_authorize_search_presentation_meta', 10, 4 );
-add_filter( 'auth_post_meta_rank_math_description', 'mcp_rankmath_authorize_search_presentation_meta', 10, 4 );
-
 /**
  * Get all Rank Math meta keys we support.
  */
@@ -1426,8 +1423,10 @@ require_once __DIR__ . '/includes/abilities-logs-redirections.php';
 require_once __DIR__ . '/includes/devenia-workflow-adapter.php';
 require_once __DIR__ . '/includes/image-attribute-compatibility.php';
 
-/** Register optional hooks for compatible translation workflows. */
+/** Register native metadata policy and optional translation workflow hooks. */
 function mcp_rankmath_register_integration_hooks(): void {
+	add_filter( 'auth_post_meta_rank_math_title', 'mcp_rankmath_authorize_search_presentation_meta', 10, 4 );
+	add_filter( 'auth_post_meta_rank_math_description', 'mcp_rankmath_authorize_search_presentation_meta', 10, 4 );
 	add_filter( 'ai_translation_workflow_gutenberg_guardrails', 'mcp_rankmath_faq_link_guardrails', 10, 3 );
 	add_filter( 'ai_translation_workflow_semantic_link_count_content', 'mcp_rankmath_exclude_faq_links_from_semantic_count', 10, 2 );
 }

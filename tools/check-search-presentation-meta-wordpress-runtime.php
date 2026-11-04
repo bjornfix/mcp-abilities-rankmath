@@ -1,5 +1,5 @@
 <?php
-/** Verify native metadata authorization and the unchanged MCP write policy. */
+/** Verify native metadata policy with WP-CLI eval-file --use-include. */
 declare( strict_types=1 );
 
 if ( ! defined( 'ABSPATH' ) || ! function_exists( 'mcp_expose_validate_post_meta_write_policy' ) ) {
@@ -95,7 +95,7 @@ try {
 		foreach ( array( 'no-seo', 'no-page', 'neither', 'both' ) as $scenario ) {
 			$input = array( 'rank_math_title' => 'Must not save', 'rank_math_description' => 'Must not save' );
 			if ( 'both' === $scenario ) {
-				$input['rank_math_focus_keyword'] = 'Must not save';
+				$input['_mcp_contract_private'] = 'Must not save';
 			}
 			$result = $ability->execute( array( 'post_id' => $fixture_id, 'meta' => $input ) );
 			$assert( is_wp_error( $result ) || false === ( $result['success'] ?? true ), "$scenario: unauthorized generic write is rejected." );
