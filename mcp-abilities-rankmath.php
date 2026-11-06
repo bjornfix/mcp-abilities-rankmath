@@ -3,7 +3,7 @@
  * Plugin Name: MCP Abilities - Rank Math
  * Plugin URI: https://devenia.com/plugins/mcp-abilities-rankmath/
  * Description: Rank Math SEO abilities for MCP. Get and update meta descriptions, titles, focus keywords, and other SEO settings.
- * Version: 1.1.31
+ * Version: 1.1.32
  * Author: basicus
  * Author URI: https://profiles.wordpress.org/basicus/
  * License: GPL-2.0+
@@ -46,6 +46,12 @@ function mcp_rankmath_check_dependencies(): bool {
 function mcp_rankmath_is_active(): bool {
 	return class_exists( 'RankMath' ) || defined( 'RANK_MATH_VERSION' );
 }
+
+/** Declare the native settings which render public titles and publisher schema. */
+function mcp_rankmath_public_options( array $names ): array {
+	return array_values( array_unique( array_merge( $names, array( 'rank-math-options-titles' ) ) ) );
+}
+add_filter( 'static_publication_public_options', 'mcp_rankmath_public_options' );
 
 /**
  * Authorize the two search-presentation fields through native metadata policy.

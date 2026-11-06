@@ -4,7 +4,7 @@ Tags: seo, rank math, mcp, api, automation
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.1.31
+Stable tag: 1.1.32
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -13,6 +13,8 @@ Rank Math SEO abilities for MCP. Get and update meta descriptions, titles, focus
 == Description ==
 
 This add-on plugin extends [MCP Expose Abilities](https://devenia.com/plugins/mcp-expose-abilities/) with Rank Math SEO functionality. It enables AI agents and automation tools to manage SEO metadata, redirections, and 404 logs.
+
+When Static Publication is active, ordinary WordPress saves of Rank Math title and publisher settings enter its publication queue. MCP calls use the same native save behavior.
 
 = Requirements =
 
@@ -113,6 +115,9 @@ For update notifications in WordPress, install [Devenia MCP Updater](https://dow
 5. The abilities are now available via the MCP endpoint
 
 == Changelog ==
+
+= 1.1.32 =
+* Declare native title and publisher settings for Static Publication, covering ordinary WordPress saves while preserving other public-option declarations and excluding unrelated operational settings.
 
 = 1.1.31 =
 * Authorize the SEO title and description through native WordPress metadata checks, requiring both target-post editing permission and Rank Math on-page SEO permission. Preserve other protected metadata policies.
