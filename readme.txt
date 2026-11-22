@@ -4,7 +4,7 @@ Tags: seo, rank math, mcp, api, automation
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.1.33
+Stable tag: 1.1.34
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -116,7 +116,7 @@ For update notifications in WordPress, install [Devenia MCP Updater](https://dow
 
 == Changelog ==
 
-= 1.1.33 =
+= 1.1.34 =
 * Preserve the native canonical and social URL for a separate Polylang posts page.
 
 = 1.1.32 =
