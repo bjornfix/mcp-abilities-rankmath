@@ -3,7 +3,7 @@
  * Plugin Name: MCP Abilities - Rank Math
  * Plugin URI: https://devenia.com/plugins/mcp-abilities-rankmath/
  * Description: Rank Math SEO abilities for MCP. Get and update meta descriptions, titles, focus keywords, and other SEO settings.
- * Version: 1.1.32
+ * Version: 1.1.33
  * Author: basicus
  * Author URI: https://profiles.wordpress.org/basicus/
  * License: GPL-2.0+
@@ -46,6 +46,36 @@ function mcp_rankmath_check_dependencies(): bool {
 function mcp_rankmath_is_active(): bool {
 	return class_exists( 'RankMath' ) || defined( 'RANK_MATH_VERSION' );
 }
+
+/**
+ * Keep Rank Math's native canonical for a separate posts page.
+ *
+ * Rank Math's Polylang homepage callback appends the language homepage path
+ * to an already localized posts-page permalink. Keep it on actual homepages.
+ */
+function mcp_rankmath_keep_posts_page_canonical(): void {
+	global $wp_filter, $wp_query;
+
+	if ( ! is_home() || is_front_page() || ! $wp_query->is_posts_page ) {
+		return;
+	}
+
+	$hook = 'rank_math/frontend/canonical';
+	$registered = $wp_filter[ $hook ] ?? null;
+	if ( ! $registered instanceof WP_Hook ) {
+		return;
+	}
+
+	foreach ( $registered->callbacks as $priority => $callbacks ) {
+		foreach ( $callbacks as $callback ) {
+			$handler = $callback['function'];
+			if ( is_array( $handler ) && $handler[0] instanceof \RankMath\ThirdParty\Polylang\Polylang && 'fix_home_canonical' === $handler[1] ) {
+				remove_filter( $hook, $handler, $priority );
+			}
+		}
+	}
+}
+add_action( 'wp', 'mcp_rankmath_keep_posts_page_canonical', 0 );
 
 /** Declare the native settings which render public titles and publisher schema. */
 function mcp_rankmath_public_options( array $names ): array {
